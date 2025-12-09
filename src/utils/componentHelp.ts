@@ -45,6 +45,11 @@ export const defaultHelpText: Record<ComponentType, string> = {
   OnPageContentsIndex: 'An on-page contents index helps users navigate long pages by providing jump links to each section.',
   DownloadInline: 'Download blocks provide access to downloadable files such as PDFs, documents, or resources.',
   SocialShareTag: 'Social sharing buttons allow users to share your content on social media platforms.',
+
+  // Listing Pages
+  ListingPage: 'A listing page displays a filterable collection of content items (news, resources, or events). Users can filter by type and topic to find relevant content. Featured items appear at the top with full details.',
+  DetailPage: 'The detail page displays a single content item (article, resource, or event) with full information. The sidebar shows metadata like publication date, author, and tags. Events include registration details.',
+  SearchResultsPage: 'The search results page displays results matching user queries. Each result shows a title, date, excerpt, and thumbnail image. Users can refine their search using the search bar at the top of the page.',
 };
 
 // Get help text for a component, using custom text if provided, otherwise falling back to default

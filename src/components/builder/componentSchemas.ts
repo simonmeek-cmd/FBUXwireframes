@@ -223,6 +223,7 @@ export const componentSchemas: ComponentSchema[] = [
     fields: [
       { key: 'heading', label: 'Heading', type: 'text', placeholder: 'Main heading' },
       { key: 'subheading', label: 'Subheading', type: 'text', placeholder: 'Subheading text' },
+      { key: 'bodyText', label: 'Body Text (no image)', type: 'richtext', placeholder: 'Body copy shown when no image...' },
       { key: 'ctaLabel', label: 'Button Label', type: 'text', placeholder: 'Learn more' },
       { key: 'tag', label: 'Tag', type: 'text', placeholder: 'Optional tag' },
       { key: 'hasImage', label: 'Show Image', type: 'toggle' },
@@ -493,6 +494,136 @@ export const componentSchemas: ComponentSchema[] = [
       { key: 'tagline', label: 'Tagline', type: 'text', placeholder: 'Company tagline' },
       { key: 'showSocialLinks', label: 'Show Social Links', type: 'toggle' },
       { key: 'showNewsletter', label: 'Show Newsletter', type: 'toggle' },
+    ],
+  },
+
+  // Listing Page Components
+  {
+    type: 'ListingPage',
+    fields: [
+      {
+        key: 'listingType',
+        label: 'Listing Type',
+        type: 'select',
+        options: [
+          { value: 'news', label: 'News' },
+          { value: 'resources', label: 'Resources' },
+          { value: 'events', label: 'Events' },
+        ],
+      },
+      { key: 'title', label: 'Page Title', type: 'text', placeholder: 'News' },
+      { key: 'introCopy', label: 'Intro Copy', type: 'richtext', placeholder: 'Introduction text...' },
+      { key: 'showHeroImage', label: 'Show Hero Image', type: 'toggle' },
+      {
+        key: 'heroImagePosition',
+        label: 'Hero Image Position',
+        type: 'select',
+        options: [
+          { value: 'right', label: 'Right' },
+          { value: 'background', label: 'Background' },
+        ],
+      },
+      { key: 'showHeroButton', label: 'Show Hero Button', type: 'toggle' },
+      { key: 'heroButtonLabel', label: 'Hero Button Label', type: 'text', placeholder: 'Button' },
+      { key: 'showContactInfo', label: 'Show Press Contact (News only)', type: 'toggle' },
+      { key: 'contactEmail', label: 'Press Email', type: 'text', placeholder: 'press@org.uk' },
+      { key: 'contactPhone', label: 'Press Phone', type: 'text', placeholder: '020 123 456 789' },
+      {
+        key: 'itemCount',
+        label: 'Number of Items',
+        type: 'select',
+        options: [
+          { value: '3', label: '3 items' },
+          { value: '6', label: '6 items' },
+          { value: '9', label: '9 items' },
+          { value: '12', label: '12 items' },
+        ],
+      },
+      { key: 'showPagination', label: 'Show Pagination', type: 'toggle' },
+      // Featured item 1
+      { key: 'featured1TypeLabel', label: 'Featured 1: Type', type: 'text', placeholder: 'Type Label' },
+      { key: 'featured1Title', label: 'Featured 1: Title', type: 'text', placeholder: 'Title' },
+      { key: 'featured1Date', label: 'Featured 1: Date', type: 'text', placeholder: '01/01/2026' },
+      { key: 'featured1Excerpt', label: 'Featured 1: Excerpt', type: 'textarea', placeholder: 'Excerpt...' },
+      // Featured item 2
+      { key: 'featured2TypeLabel', label: 'Featured 2: Type', type: 'text', placeholder: 'Type Label' },
+      { key: 'featured2Title', label: 'Featured 2: Title', type: 'text', placeholder: 'Title' },
+      { key: 'featured2Date', label: 'Featured 2: Date', type: 'text', placeholder: '01/01/2026' },
+      { key: 'featured2Excerpt', label: 'Featured 2: Excerpt', type: 'textarea', placeholder: 'Excerpt...' },
+      // Featured item 3
+      { key: 'featured3TypeLabel', label: 'Featured 3: Type', type: 'text', placeholder: 'Type Label' },
+      { key: 'featured3Title', label: 'Featured 3: Title', type: 'text', placeholder: 'Title' },
+      { key: 'featured3Date', label: 'Featured 3: Date', type: 'text', placeholder: '01/01/2026' },
+      { key: 'featured3Excerpt', label: 'Featured 3: Excerpt', type: 'textarea', placeholder: 'Excerpt...' },
+      // Filter labels
+      { key: 'filter1Label', label: 'Filter 1 Label', type: 'text', placeholder: 'Type' },
+      { key: 'filter2Label', label: 'Filter 2 Label', type: 'text', placeholder: 'Topic' },
+      { key: 'filter3Label', label: 'Filter 3 Label (Events)', type: 'text', placeholder: 'Location' },
+    ],
+  },
+  {
+    type: 'DetailPage',
+    fields: [
+      {
+        key: 'detailType',
+        label: 'Detail Type',
+        type: 'select',
+        options: [
+          { value: 'news', label: 'News Article' },
+          { value: 'resources', label: 'Resource' },
+          { value: 'events', label: 'Event' },
+        ],
+      },
+      { key: 'title', label: 'Page Title', type: 'text', placeholder: 'Article Title' },
+      { key: 'introCopy', label: 'Intro/Summary', type: 'richtext', placeholder: 'Article summary...' },
+      { key: 'showHeroImage', label: 'Show Hero Image', type: 'toggle' },
+      { key: 'showCtaButton', label: 'Show CTA Button', type: 'toggle' },
+      { key: 'ctaButtonLabel', label: 'CTA Button Label', type: 'text', placeholder: 'Register' },
+      { key: 'publishedDate', label: 'Published Date', type: 'text', placeholder: '01/01/2026' },
+      { key: 'author', label: 'Author', type: 'text', placeholder: 'Author Name' },
+      { key: 'typeLabel', label: 'Type Label', type: 'text', placeholder: 'Type' },
+      { key: 'tags', label: 'Tags (comma separated)', type: 'text', placeholder: 'Topic 1, Topic 2' },
+      { key: 'showPressContact', label: 'Show Press Contact', type: 'toggle' },
+      { key: 'pressEmail', label: 'Press Email', type: 'text', placeholder: 'press@org.uk' },
+      { key: 'pressPhone', label: 'Press Phone', type: 'text', placeholder: '01234 567890' },
+      // Events specific
+      { key: 'eventDate', label: 'Event Date', type: 'text', placeholder: '01/01/2026 - 02/01/2026' },
+      { key: 'eventTime', label: 'Event Time', type: 'text', placeholder: '18:00 - 20:00' },
+      { key: 'eventLocation', label: 'Event Location', type: 'text', placeholder: 'Venue Name' },
+      { key: 'registrationFee', label: 'Registration Fee', type: 'text', placeholder: '£8.00' },
+    ],
+  },
+  {
+    type: 'SearchResultsPage',
+    fields: [
+      { key: 'title', label: 'Page Title', type: 'text', placeholder: 'Search result listing' },
+      { key: 'introCopy', label: 'Intro Copy', type: 'richtext', placeholder: 'Introduction text...' },
+      { key: 'searchPlaceholder', label: 'Search Placeholder', type: 'text', placeholder: 'Search' },
+      { key: 'searchButtonLabel', label: 'Search Button Label', type: 'text', placeholder: 'Search' },
+      {
+        key: 'resultCount',
+        label: 'Number of Results',
+        type: 'select',
+        options: [
+          { value: '5', label: '5 results' },
+          { value: '10', label: '10 results' },
+          { value: '15', label: '15 results' },
+          { value: '20', label: '20 results' },
+        ],
+      },
+      { key: 'showPagination', label: 'Show Pagination', type: 'toggle' },
+      // Result 1
+      { key: 'result1Title', label: 'Result 1: Title', type: 'text', placeholder: "Item's Title" },
+      { key: 'result1Date', label: 'Result 1: Date', type: 'text', placeholder: '01/01/2026' },
+      { key: 'result1Excerpt', label: 'Result 1: Excerpt', type: 'textarea', placeholder: 'Result excerpt...' },
+      // Result 2
+      { key: 'result2Title', label: 'Result 2: Title', type: 'text', placeholder: "Item's Title" },
+      { key: 'result2Date', label: 'Result 2: Date', type: 'text', placeholder: '01/01/2026' },
+      { key: 'result2Excerpt', label: 'Result 2: Excerpt', type: 'textarea', placeholder: 'Result excerpt...' },
+      // Result 3
+      { key: 'result3Title', label: 'Result 3: Title', type: 'text', placeholder: "Item's Title" },
+      { key: 'result3Date', label: 'Result 3: Date', type: 'text', placeholder: '01/01/2026' },
+      { key: 'result3Excerpt', label: 'Result 3: Excerpt', type: 'textarea', placeholder: 'Result excerpt...' },
     ],
   },
 ];

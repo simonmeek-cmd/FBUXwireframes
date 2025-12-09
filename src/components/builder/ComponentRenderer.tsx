@@ -31,6 +31,9 @@ import {
   HomepageCTAs,
   HomepageStats,
   HomepageContentFeed,
+  ListingPage,
+  DetailPage,
+  SearchResultsPage,
 } from '../wireframe';
 
 interface ComponentRendererProps {
@@ -147,6 +150,10 @@ const componentMap: Record<ComponentType, React.ComponentType<Record<string, unk
   HomepageCTAs: HomepageCTAs as React.ComponentType<Record<string, unknown>>,
   HomepageStats: HomepageStats as React.ComponentType<Record<string, unknown>>,
   HomepageContentFeed: HomepageContentFeed as React.ComponentType<Record<string, unknown>>,
+  // Listing components
+  ListingPage: ListingPage as React.ComponentType<Record<string, unknown>>,
+  DetailPage: DetailPage as React.ComponentType<Record<string, unknown>>,
+  SearchResultsPage: SearchResultsPage as React.ComponentType<Record<string, unknown>>,
 };
 
 export const ComponentRenderer: React.FC<ComponentRendererProps> = ({ type, props }) => {

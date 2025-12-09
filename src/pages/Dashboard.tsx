@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useBuilderStore } from '../stores/useBuilderStore';
+import { exportAllDataJSON } from '../utils/exportStaticSite';
 
 export const Dashboard: React.FC = () => {
-  const { clients, addClient, deleteClient } = useBuilderStore();
+  const { clients, projects, addClient, deleteClient, initialize } = useBuilderStore();
   const [newClientName, setNewClientName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddClient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +25,54 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const handleExportBackup = () => {
+    exportAllDataJSON(clients, projects);
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        
+        // Validate structure
+        if (!data.clients || !data.projects || !Array.isArray(data.clients) || !Array.isArray(data.projects)) {
+          throw new Error('Invalid backup file format');
+        }
+
+        // Confirm import
+        const clientCount = data.clients.length;
+        const projectCount = data.projects.length;
+        if (!confirm(`Import ${clientCount} client(s) and ${projectCount} project(s)?\n\nThis will REPLACE all existing data.`)) {
+          return;
+        }
+
+        // Save to localStorage
+        localStorage.setItem('wireframe-builder-clients', JSON.stringify(data.clients));
+        localStorage.setItem('wireframe-builder-projects', JSON.stringify(data.projects));
+        
+        // Reload store
+        initialize();
+        
+        setImportStatus(`Successfully imported ${clientCount} client(s) and ${projectCount} project(s)`);
+        setTimeout(() => setImportStatus(null), 5000);
+      } catch (error) {
+        console.error('Import failed:', error);
+        setImportStatus('Import failed. Please check the file format.');
+        setTimeout(() => setImportStatus(null), 5000);
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-wire-100">
       {/* Header */}
@@ -34,6 +85,42 @@ export const Dashboard: React.FC = () => {
 
       {/* Main content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {/* Backup/Restore Section */}
+        <div className="mb-8 p-4 bg-wire-50 border border-wire-200 rounded">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-wire-800">Backup & Restore</h3>
+              <p className="text-sm text-wire-600 mt-1">
+                {clients.length} client(s), {projects.length} project(s)
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportBackup}
+                disabled={clients.length === 0}
+                className="px-4 py-2 bg-wire-600 text-wire-100 rounded hover:bg-wire-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                💾 Export All Data
+              </button>
+              <label className="px-4 py-2 bg-wire-200 text-wire-700 rounded hover:bg-wire-300 transition-colors cursor-pointer">
+                📂 Import Backup
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportBackup}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+          {importStatus && (
+            <p className={`mt-2 text-sm ${importStatus.includes('failed') ? 'text-red-600' : 'text-green-600'}`}>
+              {importStatus}
+            </p>
+          )}
+        </div>
+
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-wire-800">Clients</h2>
           {!isAdding && (

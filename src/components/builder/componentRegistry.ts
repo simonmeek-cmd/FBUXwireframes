@@ -94,6 +94,40 @@ export const componentRegistry: ComponentMeta[] = [
     },
   },
 
+  // Listing page components
+  {
+    type: 'ListingPage',
+    label: 'Listing Page',
+    description: 'News, Resources, or Events listing with filters',
+    category: 'listing',
+    defaultProps: {
+      listingType: 'news',
+      itemCount: 9,
+      showPagination: true,
+    },
+  },
+  {
+    type: 'DetailPage',
+    label: 'Detail Page',
+    description: 'Single article, resource, or event detail page',
+    category: 'listing',
+    defaultProps: {
+      detailType: 'news',
+      showHeroImage: true,
+    },
+  },
+  {
+    type: 'SearchResultsPage',
+    label: 'Search Results',
+    description: 'Search results listing with search bar',
+    category: 'listing',
+    defaultProps: {
+      title: 'Search result listing',
+      resultCount: 9,
+      showPagination: true,
+    },
+  },
+
   // Navigation (in-page navigation components only)
   {
     type: 'LocalBreadcrumbs',
@@ -318,6 +352,7 @@ export const componentsByCategory = componentRegistry.reduce((acc, component) =>
 // Category labels
 export const categoryLabels: Record<string, string> = {
   homepage: 'Homepage',
+  listing: 'Listing Pages',
   navigation: 'Navigation',
   hero: 'Hero',
   content: 'Content',
