@@ -24,18 +24,46 @@ const RichTextEditor: React.FC<{
   placeholder?: string;
 }> = ({ value, onChange, placeholder }) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const lastSyncedValueRef = useRef<string>(value);
+  const isUserTypingRef = useRef(false);
+
+  // Initialize content on mount
+  React.useEffect(() => {
+    if (editorRef.current && !editorRef.current.innerHTML && value) {
+      editorRef.current.innerHTML = value;
+      lastSyncedValueRef.current = value;
+    }
+  }, []);
+
+  // Only sync value prop to DOM when it changes externally (not from user typing)
+  React.useEffect(() => {
+    if (editorRef.current && !isUserTypingRef.current && value !== lastSyncedValueRef.current) {
+      // Value changed externally (e.g., component switched, initial load)
+      editorRef.current.innerHTML = value || '';
+      lastSyncedValueRef.current = value;
+    }
+  }, [value]);
 
   const execCommand = useCallback((command: string, value?: string) => {
     document.execCommand(command, false, value);
     // Update the value after command execution
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      const newValue = editorRef.current.innerHTML;
+      lastSyncedValueRef.current = newValue;
+      onChange(newValue);
     }
   }, [onChange]);
 
   const handleInput = useCallback(() => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      isUserTypingRef.current = true;
+      const newValue = editorRef.current.innerHTML;
+      lastSyncedValueRef.current = newValue;
+      onChange(newValue);
+      // Reset flag after a short delay to allow external updates if needed
+      setTimeout(() => {
+        isUserTypingRef.current = false;
+      }, 100);
     }
   }, [onChange]);
 
@@ -133,7 +161,7 @@ const RichTextEditor: React.FC<{
         onInput={handleInput}
         onPaste={handlePaste}
         className="min-h-[200px] max-h-[400px] overflow-y-auto p-3 bg-wire-50 text-sm text-wire-800 focus:outline-none prose-p:mb-2 prose-ul:list-disc prose-ul:ml-4 prose-ol:list-decimal prose-ol:ml-4 prose-h2:text-lg prose-h2:font-bold prose-h2:mb-2 prose-h3:text-base prose-h3:font-semibold prose-h3:mb-2"
-        dangerouslySetInnerHTML={{ __html: value || '' }}
+        suppressContentEditableWarning
         data-placeholder={placeholder}
         style={{
           minHeight: '200px',

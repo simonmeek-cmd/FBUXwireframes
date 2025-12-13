@@ -24,6 +24,15 @@ export const FooterSettings: React.FC<FooterSettingsProps> = ({
   const [previewWidth, setPreviewWidth] = useState(500);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset JSON value when modal opens or config changes
+  React.useEffect(() => {
+    if (isOpen) {
+      const configToUse = config || defaultFooterConfig;
+      setJsonValue(JSON.stringify(configToUse, null, 2));
+      setError(null);
+    }
+  }, [isOpen, config]);
+
   if (!isOpen) return null;
 
   const handleSave = () => {

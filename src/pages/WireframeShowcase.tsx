@@ -1,4 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useBuilderStore } from '../stores/useBuilderStore';
+import {
+  getActiveComponents,
+  getInactiveComponents,
+  getCategories,
+  getComponentsByCategory,
+} from '../utils/componentRegistry';
+import type { ComponentType } from '../types/builder';
 import {
   PrimarySecondaryNavigation,
   LocalBreadcrumbs,
@@ -28,6 +36,7 @@ interface ShowcaseSectionProps {
   title: string;
   description: string;
   children: React.ReactNode;
+  isInactive?: boolean;
 }
 
 const ShowcaseSection: React.FC<ShowcaseSectionProps> = ({
@@ -35,30 +44,85 @@ const ShowcaseSection: React.FC<ShowcaseSectionProps> = ({
   title,
   description,
   children,
+  isInactive = false,
 }) => (
-  <section id={id} className="mb-16">
+  <section 
+    id={id} 
+    className={`mb-16 ${isInactive ? 'bg-red-50/30 border-2 border-red-200 rounded-lg p-6' : ''}`}
+  >
     <div className="mb-6 pb-4 border-b-2 border-wire-300">
-      <h2 className="text-2xl font-bold text-wire-800">{title}</h2>
+      <h2 className="text-2xl font-bold text-wire-800">
+        {title}
+        {isInactive && (
+          <span className="ml-2 text-sm font-normal text-red-600">(Inactive - Not available for this project)</span>
+        )}
+      </h2>
       <p className="text-wire-600 mt-1">{description}</p>
     </div>
     <div className="space-y-6">{children}</div>
   </section>
 );
 
+interface WireframeShowcaseProps {
+  /** Optional active components override (for static export) */
+  activeComponentsOverride?: ComponentType[];
+}
+
 /**
  * WireframeShowcase
  * A page that renders all wireframe components for visual QA and documentation.
+ * Shows active components normally and inactive components with muted red background.
  */
-export const WireframeShowcase: React.FC = () => {
+export const WireframeShowcase: React.FC<WireframeShowcaseProps> = ({ 
+  activeComponentsOverride 
+}) => {
+  const { selectedProjectId, getProject } = useBuilderStore();
+  const [showInactive, setShowInactive] = useState(false);
+  
+  const project = selectedProjectId ? getProject(selectedProjectId) : undefined;
+  // Use override if provided (for static export), otherwise use project settings
+  const activeComponents = activeComponentsOverride 
+    ? activeComponentsOverride 
+    : getActiveComponents(project?.activeComponents);
+  const inactiveComponents = activeComponentsOverride
+    ? getInactiveComponents(activeComponentsOverride)
+    : getInactiveComponents(project?.activeComponents);
+  const categories = getCategories();
+  
+  // Helper to check if a component is inactive (works for both in-app and static export)
+  const isComponentInactive = (componentType: ComponentType): boolean => {
+    return !activeComponents.includes(componentType);
+  };
+
   return (
     <div className="min-h-screen bg-wire-100">
       {/* Header */}
       <header className="bg-wire-800 text-wire-100 py-8 px-4">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Wireframe Component Library</h1>
-          <p className="text-wire-300">
-            Low-fidelity pagebuilder components for charity websites
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Wireframe Component Library</h1>
+              <p className="text-wire-300">
+                Low-fidelity pagebuilder components for charity websites
+              </p>
+            </div>
+            {(project || activeComponentsOverride) && (
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showInactive}
+                    onChange={(e) => setShowInactive(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span>Show inactive components</span>
+                </label>
+                <div className="text-xs text-wire-300">
+                  {activeComponents.length} active • {inactiveComponents.length} inactive
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -67,34 +131,51 @@ export const WireframeShowcase: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-wrap gap-2 text-sm">
             {[
-              { id: 'navigation', label: '01 Navigation' },
-              { id: 'hero', label: '02 Hero' },
-              { id: 'breadcrumbs', label: '03 Breadcrumbs' },
-              { id: 'social', label: '04 Social Share' },
-              { id: 'text-editor', label: '05 Text Editor' },
-              { id: 'side-nav', label: '06 Side Nav' },
-              { id: 'accordion', label: '07 Accordion' },
-              { id: 'cta', label: '08 CTA' },
-              { id: 'embed', label: '09 Embed' },
-              { id: 'promos', label: '10 Featured Promos' },
-              { id: 'form', label: '11 Form' },
-              { id: 'info-overview', label: '12 Info Overview' },
-              { id: 'gallery', label: '13 Gallery' },
-              { id: 'media-image', label: '14 Media Image' },
-              { id: 'media-video', label: '15 Media Video' },
-              { id: 'contents-index', label: '16 Contents Index' },
-              { id: 'quote', label: '17 Quote' },
-              { id: 'download', label: '18 Download' },
-              { id: 'footer', label: '19 Footer' },
-            ].map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                className="px-2 py-1 bg-wire-100 hover:bg-wire-300 rounded text-wire-700 transition-colors no-underline hover:underline"
-              >
-                {item.label}
-              </a>
-            ))}
+              { id: 'navigation', label: '01 Navigation', componentType: 'PrimarySecondaryNavigation' },
+              { id: 'hero', label: '02 Hero', componentType: 'HeroImage' },
+              { id: 'breadcrumbs', label: '03 Breadcrumbs', componentType: 'LocalBreadcrumbs' },
+              { id: 'social', label: '04 Social Share', componentType: 'SocialShareTag' },
+              { id: 'text-editor', label: '05 Text Editor', componentType: 'TextEditor' },
+              { id: 'side-nav', label: '06 Side Nav', componentType: 'LocalSideNavigation' },
+              { id: 'accordion', label: '07 Accordion', componentType: 'AccordionInline' },
+              { id: 'cta', label: '08 CTA', componentType: 'CallToActionInline' },
+              { id: 'embed', label: '09 Embed', componentType: 'EmbedInline' },
+              { id: 'promos', label: '10 Featured Promos', componentType: 'FeaturedPromosInline' },
+              { id: 'form', label: '11 Form', componentType: 'FormInline' },
+              { id: 'info-overview', label: '12 Info Overview', componentType: 'InformationOverviewInline' },
+              { id: 'gallery', label: '13 Gallery', componentType: 'GalleryInline' },
+              { id: 'media-image', label: '14 Media Image', componentType: 'MediaImage' },
+              { id: 'media-video', label: '15 Media Video', componentType: 'MediaVideo' },
+              { id: 'contents-index', label: '16 Contents Index', componentType: 'OnPageContentsIndex' },
+              { id: 'quote', label: '17 Quote', componentType: 'QuoteInline' },
+              { id: 'download', label: '18 Download', componentType: 'DownloadInline' },
+              { id: 'footer', label: '19 Footer', componentType: 'FooterNavigation' },
+            ].map((item) => {
+              // Handle special cases where nav item maps to multiple component types
+              let isInactive = false;
+              if (item.id === 'side-nav') {
+                isInactive = isComponentInactive('LocalSideNavigation') || isComponentInactive('TextWithSideNav');
+              } else if (item.id === 'promos') {
+                isInactive = isComponentInactive('FeaturedPromosInline') || isComponentInactive('FeaturedPromosTitlesOnly');
+              } else if (item.componentType) {
+                isInactive = isComponentInactive(item.componentType as ComponentType);
+              }
+              
+              return (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`px-2 py-1 rounded transition-colors no-underline ${
+                    isInactive
+                      ? 'bg-gray-200 border-gray-400 text-gray-500 opacity-50 grayscale line-through cursor-not-allowed'
+                      : 'bg-wire-100 hover:bg-wire-300 text-wire-700 hover:underline'
+                  }`}
+                  title={isInactive ? 'This component is inactive for this project' : undefined}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
           </div>
         </div>
       </nav>
@@ -102,11 +183,12 @@ export const WireframeShowcase: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-12">
         {/* 01 Primary & Secondary Navigation */}
-        <ShowcaseSection
-          id="navigation"
-          title="01 PrimarySecondaryNavigation"
-          description="Top-level site navigation with logo, primary nav links, search, and utility links."
-        >
+          <ShowcaseSection
+            id="navigation"
+            title="01 PrimarySecondaryNavigation"
+            description="Top-level site navigation with logo, primary nav links, search, and utility links."
+            isInactive={isComponentInactive('PrimarySecondaryNavigation')}
+          >
           <div className="border border-wire-300 rounded overflow-hidden">
             <PrimarySecondaryNavigation />
           </div>
@@ -117,6 +199,7 @@ export const WireframeShowcase: React.FC = () => {
           id="hero"
           title="02 HeroImage"
           description="A prominent hero banner with heading, subheading, CTA, and optional image."
+          isInactive={isComponentInactive('HeroImage')}
         >
           <div className="space-y-8">
             <div>
@@ -144,6 +227,7 @@ export const WireframeShowcase: React.FC = () => {
           id="breadcrumbs"
           title="03 LocalBreadcrumbs"
           description="Breadcrumb navigation trail showing page hierarchy."
+          isInactive={isComponentInactive('LocalBreadcrumbs')}
         >
           <div className="border border-wire-300 rounded overflow-hidden">
             <LocalBreadcrumbs />
@@ -155,6 +239,7 @@ export const WireframeShowcase: React.FC = () => {
           id="social"
           title="04 SocialShareTag"
           description="Social media sharing buttons for the current page."
+          isInactive={isComponentInactive('SocialShareTag')}
         >
           <div className="bg-wire-50 border border-wire-300 rounded p-4">
             <SocialShareTag />
@@ -166,6 +251,7 @@ export const WireframeShowcase: React.FC = () => {
           id="text-editor"
           title="05 TextEditor"
           description="Rich text content block for body copy, lists, and inline elements."
+          isInactive={isComponentInactive('TextEditor')}
         >
           <div className="bg-wire-50 border border-wire-300 rounded p-6">
             <TextEditor heading="About our work" />
@@ -177,6 +263,7 @@ export const WireframeShowcase: React.FC = () => {
           id="side-nav"
           title="06 LocalSideNavigation + TextWithSideNav"
           description="Side menu for navigating sections within a page or section."
+          isInactive={isComponentInactive('LocalSideNavigation') || isComponentInactive('TextWithSideNav')}
         >
           <div className="space-y-8">
             <div>
@@ -199,6 +286,7 @@ export const WireframeShowcase: React.FC = () => {
           id="accordion"
           title="07 AccordionInline"
           description="Expandable/collapsible content sections for FAQ-style content."
+          isInactive={isComponentInactive('AccordionInline')}
         >
           <AccordionInline heading="Frequently Asked Questions" />
         </ShowcaseSection>
@@ -208,6 +296,7 @@ export const WireframeShowcase: React.FC = () => {
           id="cta"
           title="08 CallToActionInline"
           description="A prominent call-to-action block encouraging user action."
+          isInactive={isComponentInactive('CallToActionInline')}
         >
           <div className="space-y-4">
             <div>
@@ -244,6 +333,7 @@ export const WireframeShowcase: React.FC = () => {
           id="embed"
           title="09 EmbedInline"
           description="Placeholder for embedded content like videos, maps, or external forms."
+          isInactive={isComponentInactive('EmbedInline')}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -262,6 +352,7 @@ export const WireframeShowcase: React.FC = () => {
           id="promos"
           title="10 FeaturedPromosInline + FeaturedPromosTitlesOnly"
           description="Grid of promotional cards with optional images and metadata."
+          isInactive={isComponentInactive('FeaturedPromosInline') || isComponentInactive('FeaturedPromosTitlesOnly')}
         >
           <div className="space-y-8">
             <div>
@@ -280,6 +371,7 @@ export const WireframeShowcase: React.FC = () => {
           id="form"
           title="11 FormInline"
           description="A form component for contact forms, sign-ups, etc."
+          isInactive={isComponentInactive('FormInline')}
         >
           <div className="max-w-lg">
             <FormInline
@@ -294,6 +386,7 @@ export const WireframeShowcase: React.FC = () => {
           id="info-overview"
           title="12 InformationOverviewInline"
           description="A list or grid of information items with titles and optional descriptions."
+          isInactive={isComponentInactive('InformationOverviewInline')}
         >
           <div className="space-y-8">
             <div>
@@ -321,6 +414,7 @@ export const WireframeShowcase: React.FC = () => {
           id="gallery"
           title="13 GalleryInline"
           description="An image gallery grid with optional captions."
+          isInactive={isComponentInactive('GalleryInline')}
         >
           <div className="space-y-8">
             <div>
@@ -339,6 +433,7 @@ export const WireframeShowcase: React.FC = () => {
           id="media-image"
           title="14 MediaImage"
           description="A single image component with optional caption and layout options."
+          isInactive={isComponentInactive('MediaImage')}
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -361,6 +456,7 @@ export const WireframeShowcase: React.FC = () => {
           id="media-video"
           title="15 MediaVideo"
           description="A video player placeholder component."
+          isInactive={isComponentInactive('MediaVideo')}
         >
           <div className="max-w-2xl">
             <MediaVideo
@@ -375,6 +471,7 @@ export const WireframeShowcase: React.FC = () => {
           id="contents-index"
           title="16 OnPageContentsIndex"
           description="A table of contents for navigating long-form content pages."
+          isInactive={isComponentInactive('OnPageContentsIndex')}
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -397,6 +494,7 @@ export const WireframeShowcase: React.FC = () => {
           id="quote"
           title="17 QuoteInline"
           description="A blockquote component for testimonials and pull quotes."
+          isInactive={isComponentInactive('QuoteInline')}
         >
           <div className="space-y-6">
             <div>
@@ -428,6 +526,7 @@ export const WireframeShowcase: React.FC = () => {
           id="download"
           title="18 DownloadInline"
           description="A list of downloadable files with file type and size information."
+          isInactive={isComponentInactive('DownloadInline')}
         >
           <div className="space-y-8">
             <div>
@@ -454,11 +553,55 @@ export const WireframeShowcase: React.FC = () => {
           id="footer"
           title="19 FooterNavigation"
           description="Site footer with navigation links, contact info, and legal text."
+          isInactive={project && !activeComponents.includes('FooterNavigation')}
         >
           <div className="border border-wire-300 rounded overflow-hidden">
             <FooterNavigation />
           </div>
         </ShowcaseSection>
+
+        {/* Inactive Components Section */}
+        {(project || activeComponentsOverride) && showInactive && inactiveComponents.length > 0 && (
+          <div className="mt-16 pt-8 border-t-4 border-red-300">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-red-700 mb-2">
+                Inactive Components
+              </h2>
+              <p className="text-red-600">
+                These components are not available for this project. They appear here for reference and can be enabled in Project Settings.
+              </p>
+            </div>
+            
+            {/* Render inactive components grouped by category */}
+            {categories.map((category) => {
+              const categoryComponents = getComponentsByCategory(category)
+                .filter(c => inactiveComponents.includes(c.type));
+              
+              if (categoryComponents.length === 0) return null;
+
+              return (
+                <div key={category} className="mb-12">
+                  <h3 className="text-xl font-semibold text-red-800 mb-4">{category}</h3>
+                  <div className="space-y-8">
+                    {categoryComponents.map((info) => {
+                      // Map component type to showcase section
+                      // For now, show a placeholder - we'd need to import and render each component
+                      return (
+                        <div key={info.type} className="bg-red-50/50 border-2 border-red-200 rounded-lg p-6">
+                          <h4 className="text-lg font-semibold text-red-800 mb-2">{info.label}</h4>
+                          <p className="text-red-600 text-sm mb-4">{info.description}</p>
+                          <p className="text-xs text-red-500 italic">
+                            Component preview not available (inactive)
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
       {/* Showcase Footer */}

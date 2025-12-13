@@ -3,33 +3,29 @@ import { Link, useParams, Navigate } from 'react-router-dom';
 import { useBuilderStore } from '../stores/useBuilderStore';
 import { NavigationSettings } from '../components/builder/NavigationSettings';
 import { FooterSettings } from '../components/builder/FooterSettings';
-import { exportStaticSite, exportProjectJSON } from '../utils/exportStaticSite';
-import type { PageType } from '../types/builder';
+import { ComponentSettings } from '../components/builder/ComponentSettings';
+import { exportStaticSiteSSR } from '../utils/exportStaticSiteSSR';
+import { exportProjectJSON } from '../utils/exportStaticSite';
+import type { PageType, ComponentType } from '../types/builder';
 import type { NavigationConfig } from '../types/navigation';
 import type { FooterConfig } from '../types/footer';
 
-const PAGE_TYPES: { value: PageType; label: string; description?: string }[] = [
+const PAGE_TYPES: { value: PageType; label: string }[] = [
   { value: 'homepage', label: 'Homepage' },
   { value: 'content', label: 'Content Page' },
-  { value: 'listing', label: 'Listing Page (Generic)' },
-  { value: 'news-listing', label: 'News Listing', description: '+ News Article page' },
-  { value: 'resources-listing', label: 'Resources Listing', description: '+ Resource Detail page' },
-  { value: 'events-listing', label: 'Events Listing', description: '+ Event Detail page' },
-  { value: 'search-results', label: 'Search Results' },
+  { value: 'listing', label: 'Listing Page' },
   { value: 'custom', label: 'Custom' },
 ];
 
-// Page types that auto-create paired pages
-const LISTING_PAGE_TYPES = ['news-listing', 'resources-listing', 'events-listing'];
-
 export const ProjectView: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { getProject, getClient, addPage, deletePage, updateNavigationConfig, updateFooterConfig } = useBuilderStore();
+  const { getProject, getClient, addPage, deletePage, updateNavigationConfig, updateFooterConfig, updateActiveComponents } = useBuilderStore();
   const [newPageName, setNewPageName] = useState('');
   const [newPageType, setNewPageType] = useState<PageType>('content');
   const [isAdding, setIsAdding] = useState(false);
   const [showNavSettings, setShowNavSettings] = useState(false);
   const [showFooterSettings, setShowFooterSettings] = useState(false);
+  const [showComponentSettings, setShowComponentSettings] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const project = projectId ? getProject(projectId) : undefined;
@@ -67,11 +63,17 @@ export const ProjectView: React.FC = () => {
     }
   };
 
+  const handleSaveActiveComponents = (activeComponents: ComponentType[]) => {
+    if (projectId) {
+      updateActiveComponents(projectId, activeComponents);
+    }
+  };
+
   const handleExportForHosting = async () => {
     if (!project) return;
     setIsExporting(true);
     try {
-      await exportStaticSite(project);
+      await exportStaticSiteSSR(project, client?.name || 'Client');
     } catch (error) {
       console.error('Export failed:', error);
       alert('Export failed. Please try again.');
@@ -85,23 +87,8 @@ export const ProjectView: React.FC = () => {
   };
 
   const getPageTypeLabel = (type: PageType) => {
-    const typeMap: Record<string, string> = {
-      'homepage': 'Homepage',
-      'content': 'Content Page',
-      'listing': 'Listing Page',
-      'custom': 'Custom',
-      'news-listing': 'News Listing',
-      'news-article': 'News Article',
-      'resources-listing': 'Resources Listing',
-      'resource-detail': 'Resource Detail',
-      'events-listing': 'Events Listing',
-      'event-detail': 'Event Detail',
-      'search-results': 'Search Results',
-    };
-    return typeMap[type] || type;
+    return PAGE_TYPES.find((t) => t.value === type)?.label || type;
   };
-
-  const isListingType = (type: PageType) => LISTING_PAGE_TYPES.includes(type);
 
   return (
     <div className="min-h-screen bg-wire-100">
@@ -131,7 +118,7 @@ export const ProjectView: React.FC = () => {
                 Export for client review or backup your work
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={handleExportForHosting}
                 disabled={isExporting || project.pages.length === 0}
@@ -225,6 +212,39 @@ export const ProjectView: React.FC = () => {
           </div>
         </div>
 
+        {/* Component Settings */}
+        <div className="mb-8 p-4 bg-wire-200 border border-wire-300 rounded">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-wire-800">Available Components</h3>
+              <p className="text-sm text-wire-600 mt-1">
+                Select which components are available for this project
+              </p>
+            </div>
+            <button
+              onClick={() => setShowComponentSettings(true)}
+              className="px-4 py-2 bg-wire-600 text-wire-100 rounded hover:bg-wire-700 transition-colors"
+            >
+              Configure
+            </button>
+          </div>
+          {project.activeComponents ? (
+            <div className="text-sm text-wire-600 mt-3">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                {project.activeComponents.length} components active
+              </span>
+            </div>
+          ) : (
+            <div className="text-sm text-wire-600 mt-3">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 bg-wire-400 rounded-full"></span>
+                All components active (default)
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Pages Section */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-wire-800">Pages</h2>
@@ -276,15 +296,10 @@ export const ProjectView: React.FC = () => {
                 >
                   {PAGE_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
-                      {type.label}{type.description ? ` ${type.description}` : ''}
+                      {type.label}
                     </option>
                   ))}
                 </select>
-                {isListingType(newPageType) && (
-                  <p className="mt-1 text-xs text-wire-500">
-                    This will also create the corresponding detail page.
-                  </p>
-                )}
               </div>
             </div>
             <div className="flex gap-3">
@@ -385,6 +400,14 @@ export const ProjectView: React.FC = () => {
         onSave={handleSaveFooter}
         isOpen={showFooterSettings}
         onClose={() => setShowFooterSettings(false)}
+      />
+
+      {/* Component Settings Modal */}
+      <ComponentSettings
+        activeComponents={project.activeComponents}
+        onSave={handleSaveActiveComponents}
+        isOpen={showComponentSettings}
+        onClose={() => setShowComponentSettings(false)}
       />
     </div>
   );

@@ -271,6 +271,11 @@ export const Preview: React.FC = () => {
             <SiteNavigation 
               config={project.navigationConfig} 
               onNavigate={(href) => {
+                // Handle logo click (home/welcome)
+                if (href === '/' || href === 'index.html') {
+                  setCurrentPageIndex(0);
+                  return;
+                }
                 // Find page by name and navigate
                 const targetPage = pages.find(p => 
                   p.name.toLowerCase() === href.replace(/^\//, '').toLowerCase() ||

@@ -164,7 +164,19 @@ const MobileNav: React.FC<{
     <div className="fixed inset-0 z-50 bg-white">
       {/* Mobile header */}
       <div className="flex items-center justify-between p-4 border-b border-wire-200">
-        <div className="font-bold text-wire-800">{config.logoText}</div>
+        <a
+          href="#"
+          onClick={(e) => {
+            if (onNavigate) {
+              e.preventDefault();
+              onNavigate('/');
+            }
+            handleClose();
+          }}
+          className="font-bold text-wire-800 no-underline hover:opacity-80 transition-opacity"
+        >
+          {config.logoText}
+        </a>
         <button
           onClick={handleClose}
           className="p-2 text-wire-600 hover:text-wire-800"
@@ -341,13 +353,22 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             {/* Logo */}
-            <div className="flex items-center gap-2">
+            <a
+              href="#"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/');
+                }
+              }}
+              className="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity"
+            >
               <div className="w-8 h-8 bg-wire-500 rounded flex items-center justify-center">
                 <svg className="w-5 h-5 text-wire-300" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                 </svg>
               </div>
-            </div>
+            </a>
 
             {/* Desktop Primary Nav + CTAs (aligned right together) */}
             <div className="hidden md:flex items-center gap-2">

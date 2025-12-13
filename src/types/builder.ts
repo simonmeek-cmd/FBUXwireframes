@@ -2,6 +2,7 @@
 
 import type { NavigationConfig } from './navigation';
 import type { FooterConfig } from './footer';
+import type { WelcomePageConfig } from './welcomePage';
 
 export interface Client {
   id: string;
@@ -17,6 +18,9 @@ export interface Project {
   createdAt: string;
   navigationConfig?: NavigationConfig;
   footerConfig?: FooterConfig;
+  welcomePageConfig?: WelcomePageConfig;
+  /** List of active component types. If undefined, all components are active (backward compatible) */
+  activeComponents?: ComponentType[];
 }
 
 export type PageType = 

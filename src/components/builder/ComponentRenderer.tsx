@@ -167,9 +167,35 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({ type, prop
     );
   }
 
-  const transformedProps = transformProps(type, props);
-  
-  return <Component {...transformedProps} />;
+  try {
+    const transformedProps = transformProps(type, props);
+    
+    // Fix common prop issues before rendering
+    if (type === 'DetailPage' && transformedProps.tags && !Array.isArray(transformedProps.tags)) {
+      // Convert string tags to array
+      if (typeof transformedProps.tags === 'string') {
+        transformedProps.tags = transformedProps.tags.split(',').map(t => t.trim()).filter(t => t);
+      } else {
+        transformedProps.tags = [];
+      }
+    }
+    
+    return <Component {...transformedProps} />;
+  } catch (error) {
+    console.error(`Error rendering component ${type}:`, error);
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+        <p className="font-bold">Error rendering {type}</p>
+        <p className="text-xs mt-1">{error instanceof Error ? error.message : String(error)}</p>
+        <details className="mt-2 text-xs">
+          <summary className="cursor-pointer">View props</summary>
+          <pre className="mt-1 p-2 bg-white rounded overflow-x-auto">
+            {JSON.stringify(props, null, 2)}
+          </pre>
+        </details>
+      </div>
+    );
+  }
 };
 
 export default ComponentRenderer;

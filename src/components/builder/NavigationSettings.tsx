@@ -2,6 +2,8 @@ import React, { useState, useRef, useCallback } from 'react';
 import type { NavigationConfig } from '../../types/navigation';
 import { defaultNavigationConfig, exampleNavigationJSON, validateNavigationConfig } from '../../types/navigation';
 import { SiteNavigation } from '../wireframe/SiteNavigation';
+import { parseNavigationFromFile } from '../../utils/parseNavigationFromFile';
+import { parseNavigationFromStructuredText } from '../../utils/parseNavigationFromStructuredText';
 
 interface NavigationSettingsProps {
   config: NavigationConfig | undefined;
@@ -24,7 +26,20 @@ export const NavigationSettings: React.FC<NavigationSettingsProps> = ({
   const [previewWidth, setPreviewWidth] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const parseFileInputRef = useRef<HTMLInputElement>(null);
+  const structuredTextInputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isParsing, setIsParsing] = useState(false);
+  const [showStructuredTextInput, setShowStructuredTextInput] = useState(false);
+
+  // Reset JSON value when modal opens or config changes
+  React.useEffect(() => {
+    if (isOpen) {
+      const configToUse = config || defaultNavigationConfig;
+      setJsonValue(JSON.stringify(configToUse, null, 2));
+      setError(null);
+    }
+  }, [isOpen, config]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -100,6 +115,121 @@ export const NavigationSettings: React.FC<NavigationSettingsProps> = ({
     reader.readAsText(file);
   };
 
+  const handleParseFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check if it's a text file - use structured text parser
+    const fileName = file.name.toLowerCase();
+    const isTextFile = fileName.endsWith('.txt') || 
+                       fileName.endsWith('.csv') || 
+                       fileName.endsWith('.tsv') ||
+                       file.type === 'text/plain' ||
+                       file.type === 'text/csv';
+
+    if (isTextFile) {
+      // Use structured text parser
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        handleParseStructuredText(text);
+      };
+      reader.onerror = () => {
+        setError('Failed to read text file');
+      };
+      reader.readAsText(file);
+      return;
+    }
+
+    // Otherwise, use PDF/image parser
+    console.log('[Navigation Settings] Starting file parse:', file.name, file.type, file.size);
+    setIsParsing(true);
+    setError(null);
+
+    // Add timeout to prevent infinite hanging
+    const timeoutId = setTimeout(() => {
+      console.error('[Navigation Settings] Parse timeout after 30 seconds');
+      setIsParsing(false);
+      setError('Parsing timed out. The file might be too large or corrupted. Please try a smaller file or check the browser console.');
+      if (parseFileInputRef.current) {
+        parseFileInputRef.current.value = '';
+      }
+    }, 30000);
+
+    try {
+      console.log('[Navigation Settings] Calling parseNavigationFromFile...');
+      const result = await parseNavigationFromFile(file);
+      clearTimeout(timeoutId);
+      console.log('[Navigation Settings] Parse complete, result:', result);
+      
+      if (result.error) {
+        setError(result.error);
+      }
+      
+      // Update JSON with parsed result
+      const parsedJson = JSON.stringify(result.config, null, 2);
+      setJsonValue(parsedJson);
+      
+      if (!result.error) {
+        // Count items for feedback
+        const itemCount = result.config.primaryItems.length;
+        const childCount = result.config.primaryItems.reduce((sum, item) => 
+          sum + (item.children?.length || 0), 0
+        );
+        const successMsg = `Navigation structure parsed successfully!\n\nFound:\n- ${itemCount} top-level menu items\n- ${childCount} child items\n\nPlease review and adjust the structure, add hrefs, and configure CTAs as needed.`;
+        setError(null);
+        alert(successMsg);
+      }
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.error('[Navigation Settings] Parse error:', error);
+      setError(`Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}. Check browser console (F12) for details.`);
+    } finally {
+      setIsParsing(false);
+      // Reset file input
+      if (parseFileInputRef.current) {
+        parseFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleParseStructuredText = (text: string) => {
+    setIsParsing(true);
+    setError(null);
+
+    try {
+      const result = parseNavigationFromStructuredText(text);
+      
+      if (result.error) {
+        setError(result.error);
+      }
+      
+      // Update JSON with parsed result
+      const parsedJson = JSON.stringify(result.config, null, 2);
+      setJsonValue(parsedJson);
+      
+      if (!result.error) {
+        // Count items for feedback
+        const itemCount = result.config.primaryItems.length;
+        const childCount = result.config.primaryItems.reduce((sum, item) => 
+          sum + (item.children?.length || 0), 0
+        );
+        const grandchildCount = result.config.primaryItems.reduce((sum, item) => 
+          sum + (item.children?.reduce((cSum, child) => cSum + (child.children?.length || 0), 0) || 0), 0
+        );
+        const successMsg = `Navigation structure parsed successfully!\n\nFound:\n- ${itemCount} top-level menu items\n- ${childCount} child items\n- ${grandchildCount} grandchild items\n\nPlease review and adjust the structure, add hrefs, and configure CTAs as needed.`;
+        setError(null);
+        alert(successMsg);
+        setShowStructuredTextInput(false);
+      }
+    } catch (error) {
+      console.error('[Navigation Settings] Parse error:', error);
+      setError(`Failed to parse structured text: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
   const handleLoadExample = () => {
     setJsonValue(exampleNavigationJSON);
     setError(null);
@@ -164,6 +294,28 @@ export const NavigationSettings: React.FC<NavigationSettingsProps> = ({
                 className="hidden"
               />
               <button
+                onClick={() => parseFileInputRef.current?.click()}
+                disabled={isParsing}
+                className="px-3 py-1.5 text-sm bg-wire-600 text-white rounded hover:bg-wire-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Parse navigation structure from PDF or image. Check browser console (F12) for progress."
+              >
+                {isParsing ? '⏳ Parsing... (check console)' : '📄 Parse from PDF/Image'}
+              </button>
+              <input
+                ref={parseFileInputRef}
+                type="file"
+                accept=".pdf,application/pdf,image/*,.txt,.csv,.tsv,text/plain,text/csv"
+                onChange={handleParseFromFile}
+                className="hidden"
+              />
+              <button
+                onClick={() => setShowStructuredTextInput(!showStructuredTextInput)}
+                className="px-3 py-1.5 text-sm bg-wire-500 text-white rounded hover:bg-wire-600 transition-colors"
+                title="Paste structured text (CSV, indented, or markdown format)"
+              >
+                📝 Paste Structured Text
+              </button>
+              <button
                 onClick={handleLoadExample}
                 className="px-3 py-1.5 text-sm bg-wire-100 text-wire-700 rounded hover:bg-wire-200 transition-colors"
               >
@@ -214,6 +366,69 @@ export const NavigationSettings: React.FC<NavigationSettingsProps> = ({
             {error && (
               <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
                 {error}
+              </div>
+            )}
+
+            {/* Structured Text Input */}
+            {showStructuredTextInput && (
+              <div className="mb-3 p-4 bg-wire-50 border border-wire-300 rounded">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-wire-800">Paste Structured Navigation</h3>
+                    <p className="text-xs text-wire-600 mt-1">
+                      Supports: CSV/TSV (columns = top-level, rows = children), Indented text (2 spaces = child, 4 spaces = grandchild), or Markdown lists
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowStructuredTextInput(false)}
+                    className="text-wire-500 hover:text-wire-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <textarea
+                  ref={structuredTextInputRef}
+                  placeholder={`Example CSV format:
+About Us,What We Do,News,Contact
+Our Mission,Service One,Latest Updates,Get in Touch
+Our Team,Service Two,,Contact Form
+
+Or indented format:
+About Us
+  Our Mission
+    Vision & Values
+    History
+  Our Team
+What We Do
+  Service One
+News
+Contact`}
+                  className="w-full h-48 p-2 text-sm font-mono bg-white border border-wire-300 rounded resize-none focus:outline-none focus:border-wire-500"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => {
+                      const text = structuredTextInputRef.current?.value || '';
+                      if (text.trim()) {
+                        handleParseStructuredText(text);
+                      }
+                    }}
+                    disabled={isParsing}
+                    className="px-3 py-1.5 text-sm bg-wire-600 text-white rounded hover:bg-wire-700 transition-colors disabled:opacity-50"
+                  >
+                    Parse
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (structuredTextInputRef.current) {
+                        structuredTextInputRef.current.value = '';
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-wire-100 text-wire-700 rounded hover:bg-wire-200 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
             )}
 

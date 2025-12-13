@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import type { Client, Project, Page, PlacedComponent, PageType } from '../types/builder';
+import type { Client, Project, Page, PlacedComponent, PageType, ComponentType } from '../types/builder';
 import type { NavigationConfig } from '../types/navigation';
 import type { FooterConfig } from '../types/footer';
+import type { WelcomePageConfig } from '../types/welcomePage';
 import { generateId } from '../types/builder';
 import { loadClients, saveClients, loadProjects, saveProjects } from '../utils/storage';
 
@@ -36,6 +37,12 @@ interface BuilderState {
   
   // Footer config actions
   updateFooterConfig: (projectId: string, config: FooterConfig) => void;
+  
+  // Welcome page config actions
+  updateWelcomePageConfig: (projectId: string, config: WelcomePageConfig) => void;
+  
+  // Active components actions
+  updateActiveComponents: (projectId: string, activeComponents: ComponentType[]) => void;
   
   // Component actions
   addComponent: (projectId: string, pageId: string, component: Omit<PlacedComponent, 'id' | 'order'>) => void;
@@ -391,6 +398,26 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     set((state) => {
       const projects = state.projects.map((p) =>
         p.id === projectId ? { ...p, footerConfig: config } : p
+      );
+      saveProjects(projects);
+      return { projects };
+    });
+  },
+  
+  updateWelcomePageConfig: (projectId, config) => {
+    set((state) => {
+      const projects = state.projects.map((p) =>
+        p.id === projectId ? { ...p, welcomePageConfig: config } : p
+      );
+      saveProjects(projects);
+      return { projects };
+    });
+  },
+  
+  updateActiveComponents: (projectId, activeComponents) => {
+    set((state) => {
+      const projects = state.projects.map((p) =>
+        p.id === projectId ? { ...p, activeComponents } : p
       );
       saveProjects(projects);
       return { projects };

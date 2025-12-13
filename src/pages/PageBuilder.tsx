@@ -17,6 +17,7 @@ import { ComponentPalette } from '../components/builder/ComponentPalette';
 import { Canvas } from '../components/builder/Canvas';
 import { PropertyEditor } from '../components/builder/PropertyEditor';
 import { getComponentMeta } from '../components/builder/componentRegistry';
+import { getActiveComponents } from '../utils/componentRegistry';
 import type { ComponentType } from '../types/builder';
 
 export const PageBuilder: React.FC = () => {
@@ -70,9 +71,19 @@ export const PageBuilder: React.FC = () => {
     // Check if dragging from palette
     const activeData = active.data.current;
     if (activeData?.type === 'palette-item') {
+      const componentType = activeData.componentType as ComponentType;
+      
+      // Validate that the component is active for this project
+      const activeComponents = getActiveComponents(project?.activeComponents);
+      if (!activeComponents.includes(componentType)) {
+        // Component is inactive - don't allow adding it
+        alert(`"${getComponentMeta(componentType)?.label || componentType}" is not active for this project. Please enable it in Project Settings.`);
+        return;
+      }
+      
       // Add new component
       addComponent(projectId!, pageId!, {
-        type: activeData.componentType as ComponentType,
+        type: componentType,
         props: activeData.defaultProps || {},
       });
       return;

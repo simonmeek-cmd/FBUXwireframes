@@ -7,6 +7,7 @@ import { ProjectView } from './pages/ProjectView';
 import { PageBuilder } from './pages/PageBuilder';
 import { Preview } from './pages/Preview';
 import { WireframeShowcase } from './pages/WireframeShowcase';
+import { Debug } from './pages/Debug';
 
 function App() {
   const initialize = useBuilderStore((state) => state.initialize);
@@ -28,6 +29,9 @@ function App() {
         
         {/* Component showcase (for reference) */}
         <Route path="/showcase" element={<WireframeShowcase />} />
+        
+        {/* Debug tool */}
+        <Route path="/debug" element={<Debug />} />
         
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
