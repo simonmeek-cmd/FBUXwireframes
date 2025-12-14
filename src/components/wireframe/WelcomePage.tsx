@@ -28,6 +28,46 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
 
   return (
     <div className="min-h-screen bg-wire-50">
+      <style>{`
+        .welcome-intro h2 {
+          margin-top: 2rem;
+          margin-bottom: 0.75rem;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #243b53;
+        }
+        .welcome-intro h2:first-child {
+          margin-top: 0;
+        }
+        .welcome-intro h3 {
+          margin-top: 1.5rem;
+          margin-bottom: 0.5rem;
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #243b53;
+        }
+        .welcome-intro p {
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+          line-height: 1.7;
+        }
+        .welcome-intro p:first-child {
+          margin-top: 0;
+        }
+        .welcome-intro ul,
+        .welcome-intro ol {
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+          padding-left: 1.5rem;
+        }
+        .welcome-intro li {
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+        .welcome-intro strong {
+          font-weight: 600;
+        }
+      `}</style>
       {/* Logo bar */}
       <div className="bg-white border-b border-wire-300 px-8 py-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -56,12 +96,8 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         {/* Intro copy */}
         {introCopy && (
           <div
-            className="text-wire-700 leading-relaxed mb-12 prose prose-wire max-w-none"
+            className="text-wire-700 leading-relaxed mb-12 max-w-none welcome-intro"
             dangerouslySetInnerHTML={{ __html: introCopy }}
-            style={{
-              // Basic prose styling
-              lineHeight: '1.7',
-            }}
           />
         )}
 
