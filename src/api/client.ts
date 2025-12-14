@@ -48,25 +48,49 @@ const apiRequest = async <T>(
 // Clients API
 export const clientsApi = {
   getAll: async (): Promise<Client[]> => {
-    return apiRequest<Client[]>('/clients');
+    const data = await apiRequest<any[]>('/clients');
+    // Convert snake_case to camelCase
+    return data.map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      createdAt: c.created_at || c.createdAt || new Date().toISOString(),
+    }));
   },
 
   getById: async (id: string): Promise<Client> => {
-    return apiRequest<Client>(`/clients/${id}`);
+    const data = await apiRequest<any>(`/clients/${id}`);
+    // Convert snake_case to camelCase
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: data.created_at || data.createdAt || new Date().toISOString(),
+    };
   },
 
   create: async (client: Omit<Client, 'id' | 'createdAt'>): Promise<Client> => {
-    return apiRequest<Client>('/clients', {
+    const data = await apiRequest<any>('/clients', {
       method: 'POST',
       body: JSON.stringify(client),
     });
+    // Convert snake_case to camelCase
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: data.created_at || data.createdAt || new Date().toISOString(),
+    };
   },
 
   update: async (id: string, updates: Partial<Client>): Promise<Client> => {
-    return apiRequest<Client>(`/clients/${id}`, {
+    const data = await apiRequest<any>(`/clients/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
+    // Convert snake_case to camelCase
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: data.created_at || data.createdAt || new Date().toISOString(),
+    };
   },
 
   delete: async (id: string): Promise<void> => {

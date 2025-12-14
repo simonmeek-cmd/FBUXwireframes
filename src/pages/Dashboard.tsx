@@ -196,7 +196,7 @@ export const Dashboard: React.FC = () => {
                     {client.name}
                   </Link>
                   <p className="text-sm text-wire-500">
-                    Created {new Date(client.createdAt).toLocaleDateString()}
+                    Created {client.createdAt ? new Date(client.createdAt).toLocaleDateString() : 'Unknown date'}
                   </p>
                 </div>
                 <div className="flex gap-2">

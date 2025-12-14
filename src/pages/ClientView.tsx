@@ -121,7 +121,7 @@ export const ClientView: React.FC = () => {
                   </Link>
                   <p className="text-sm text-wire-500">
                     {project.pages.length} page{project.pages.length !== 1 ? 's' : ''} • 
-                    Created {new Date(project.createdAt).toLocaleDateString()}
+                    Created {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : 'Unknown date'}
                   </p>
                 </div>
                 <div className="flex gap-2">
