@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { useBuilderStore } from '../stores/useBuilderStore';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
@@ -95,15 +95,32 @@ const HelpPopup: React.FC<{
 
 export const Preview: React.FC = () => {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
-  const { getProject, getClient } = useBuilderStore();
+  const { getProject, getClient, loading, initialize } = useBuilderStore();
   const previewRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  // Ensure store is initialized
+  useEffect(() => {
+    if (!initialized && !loading) {
+      initialize().then(() => setInitialized(true));
+    }
+  }, [initialized, loading, initialize]);
 
   const project = projectId ? getProject(projectId) : undefined;
   const client = project ? getClient(project.clientId) : undefined;
+
+  // Show loading state while initializing
+  if (loading || !initialized) {
+    return (
+      <div className="min-h-screen bg-wire-100 flex items-center justify-center">
+        <div className="text-wire-600">Loading...</div>
+      </div>
+    );
+  }
 
   if (!project) {
     return <Navigate to="/" replace />;
