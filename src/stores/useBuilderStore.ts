@@ -177,6 +177,8 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
         name,
       });
       
+      const project = { ...newProject, pages: [] };
+      
       set((state) => ({
         projects: [...state.projects, project],
       }));
@@ -448,7 +450,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   
   updatePage: async (projectId, pageId, updates) => {
     try {
-      const updated = await pagesApi.update(pageId, updates);
+      await pagesApi.update(pageId, updates);
       
       set((state) => ({
         projects: state.projects.map((p) =>

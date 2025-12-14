@@ -146,7 +146,7 @@ export const ListingPage: React.FC<ListingPageProps> = ({
 
   // Generate remaining placeholder items
   const remainingCount = Math.max(0, displayItemCount - 3);
-  const placeholderItems: ListingItemConfig[] = Array.from({ length: remainingCount }, (_, i) => ({
+  const placeholderItems: ListingItemConfig[] = Array.from({ length: remainingCount }, () => ({
     typeLabel: 'Type Label',
     title: 'Title',
     date: '01/01/2026',

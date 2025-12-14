@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { loadProjects, saveProjects, exportAllData } from '../utils/storage';
-import type { Project, Page, PlacedComponent } from '../types/builder';
+import type { Project, PlacedComponent } from '../types/builder';
 
 export const Debug: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>(loadProjects());
@@ -93,19 +93,16 @@ export const Debug: React.FC = () => {
               }
             }
 
+            const order = typeof comp.order === 'number' ? comp.order : index;
             return {
               id: comp.id || `comp-${Date.now()}-${index}`,
               type: comp.type || 'TextEditor',
               props,
-              order: typeof comp.order === 'number' ? comp.order : index,
-              helpText: comp.helpText || undefined,
-            };
+              order,
+              helpText: comp.helpText,
+            } as PlacedComponent;
           })
-          .filter((comp): comp is PlacedComponent => comp !== null)
-          .map((comp, index) => ({
-            ...comp,
-            order: comp.order !== undefined ? comp.order : index,
-          }))
+          .filter((comp): comp is PlacedComponent => comp !== null && comp.id !== undefined)
           .sort((a, b) => a.order - b.order);
 
         return {

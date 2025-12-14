@@ -116,7 +116,7 @@ export { ListingPage } from './ListingPage';
 export type { ListingPageProps, ListingItemConfig } from './ListingPage';
 
 export { DetailSidebar } from './DetailSidebar';
-export type { DetailSidebarProps, DownloadItem } from './DetailSidebar';
+export type { DetailSidebarProps, DownloadItem as DetailSidebarDownloadItem } from './DetailSidebar';
 
 export { DetailPage } from './DetailPage';
 export type { DetailPageProps } from './DetailPage';

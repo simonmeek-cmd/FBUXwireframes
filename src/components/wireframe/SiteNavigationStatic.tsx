@@ -1,5 +1,5 @@
 import React from 'react';
-import type { NavigationConfig, NavItem, NavCTA } from '../../types/navigation';
+import type { NavigationConfig, NavItem } from '../../types/navigation';
 import { defaultNavigationConfig } from '../../types/navigation';
 
 export interface SiteNavigationStaticProps {

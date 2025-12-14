@@ -63,7 +63,7 @@ export const TextWithSideNav: React.FC<TextWithSideNavProps> = ({
     <div className="flex-1 space-y-8">
       {sections.map((section) => (
         <section key={section.id} id={`section-${section.id}`}>
-          <TextEditor heading={section.label} content={section.body} />
+          <TextEditor heading={section.label} content={typeof section.body === 'string' ? section.body : String(section.body)} />
         </section>
       ))}
     </div>
