@@ -161,12 +161,12 @@ export const MigrateData: React.FC = () => {
           for (let i = 0; i < oldProject.pages.length; i++) {
             const oldPage = oldProject.pages[i];
             await pagesApi.create({
-              projectId: newProject.id,
+              project_id: newProject.id,
               name: oldPage.name,
               type: oldPage.type,
               components: oldPage.components || [],
-              orderIndex: i,
-            } as any); // Type assertion needed due to API client conversion
+              order_index: i,
+            });
             pagesMigrated++;
           }
         }
