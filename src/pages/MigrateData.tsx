@@ -186,7 +186,7 @@ export const MigrateData: React.FC = () => {
               <li>Projects: {farleighProjects.length}</li>
               <li>
                 Total pages:{' '}
-                {farleighProjects.reduce((sum, p) => sum + (p.pages?.length || 0), 0)}
+                {farleighProjects.reduce((sum: number, p: any) => sum + (p.pages?.length || 0), 0)}
               </li>
             </ul>
           </div>
@@ -215,18 +215,20 @@ export const MigrateData: React.FC = () => {
               </p>
             </div>
           ) : (
-            <button
-              onClick={migrateFarleighHospice}
-              disabled={loading || (!farleighClient && !jsonData)}
-              className="px-4 py-2 bg-wire-600 text-white rounded hover:bg-wire-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Migrating...' : 'Start Migration'}
-            </button>
-            {!farleighClient && jsonData && (
-              <p className="text-sm text-wire-600 mt-2">
-                Note: Will migrate from uploaded JSON file
-              </p>
-            )}
+            <div>
+              <button
+                onClick={migrateFarleighHospice}
+                disabled={loading || (!farleighClient && !jsonData)}
+                className="px-4 py-2 bg-wire-600 text-white rounded hover:bg-wire-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Migrating...' : 'Start Migration'}
+              </button>
+              {!farleighClient && jsonData && (
+                <p className="text-sm text-wire-600 mt-2">
+                  Note: Will migrate from uploaded JSON file
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
