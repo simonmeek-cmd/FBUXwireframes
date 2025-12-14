@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { useBuilderStore } from '../stores/useBuilderStore';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
@@ -95,29 +95,18 @@ const HelpPopup: React.FC<{
 
 export const Preview: React.FC = () => {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
-  const { getProject, getClient, loading, initialize, projects } = useBuilderStore();
+  const { getProject, getClient, loading } = useBuilderStore();
   const previewRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
-  const [hasInitialized, setHasInitialized] = useState(false);
-
-  // Ensure store is initialized (only once)
-  useEffect(() => {
-    if (!hasInitialized && !loading && projects.length === 0) {
-      setHasInitialized(true);
-      initialize().catch(console.error);
-    } else if (projects.length > 0) {
-      setHasInitialized(true);
-    }
-  }, []); // Empty deps - only run once on mount
 
   const project = projectId ? getProject(projectId) : undefined;
   const client = project ? getClient(project.clientId) : undefined;
 
-  // Show loading state while initializing
-  if (loading || (!hasInitialized && projects.length === 0)) {
+  // Show loading state while store is loading
+  if (loading) {
     return (
       <div className="min-h-screen bg-wire-100 flex items-center justify-center">
         <div className="text-wire-600">Loading...</div>

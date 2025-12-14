@@ -31,7 +31,8 @@ function AppContent() {
       }
     };
     initIfAuthenticated();
-  }, [initialize, location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]); // Only depend on location.pathname, not initialize
 
   return null; // This component just handles initialization
 }
