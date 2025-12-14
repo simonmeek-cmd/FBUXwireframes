@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
 import { SiteNavigation } from '../components/wireframe/SiteNavigation';
@@ -102,6 +102,7 @@ export const Publish: React.FC = () => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
+  const previousPageIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -160,15 +161,25 @@ export const Publish: React.FC = () => {
   // If no pageId specified, show welcome page
   const showWelcomePage = !pageId;
   
-  // Sync currentPageIndex with pageId from URL - only depend on pageId and project.id to avoid loops
+  // Sync currentPageIndex with pageId from URL - use ref to prevent infinite loops
   useEffect(() => {
-    if (pageId && project.pages && project.pages.length > 0) {
+    // Only update if pageId actually changed
+    if (pageId === previousPageIdRef.current) {
+      return;
+    }
+    
+    if (pageId && project?.pages && project.pages.length > 0) {
       const index = project.pages.findIndex(p => p.id === pageId);
       if (index !== -1) {
         setCurrentPageIndex(index);
+        previousPageIdRef.current = pageId;
       }
+    } else if (!pageId) {
+      // Reset when no pageId
+      previousPageIdRef.current = undefined;
     }
-  }, [pageId, project.id]); // Only depend on pageId and project.id, not the pages array
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId, project?.id]); // Only depend on pageId and project.id - ref prevents loops
   
   // If pageId is specified, find that page
   const currentPage = pageId 
