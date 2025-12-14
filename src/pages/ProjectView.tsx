@@ -4,11 +4,13 @@ import { useBuilderStore } from '../stores/useBuilderStore';
 import { NavigationSettings } from '../components/builder/NavigationSettings';
 import { FooterSettings } from '../components/builder/FooterSettings';
 import { ComponentSettings } from '../components/builder/ComponentSettings';
+import { WelcomePageSettings } from '../components/builder/WelcomePageSettings';
 import { exportStaticSiteSSR } from '../utils/exportStaticSiteSSR';
 import { exportProjectJSON } from '../utils/exportStaticSite';
 import type { PageType, ComponentType } from '../types/builder';
 import type { NavigationConfig } from '../types/navigation';
 import type { FooterConfig } from '../types/footer';
+import type { WelcomePageConfig } from '../types/welcomePage';
 
 const PAGE_TYPES: { value: PageType; label: string }[] = [
   { value: 'homepage', label: 'Homepage' },
@@ -19,12 +21,13 @@ const PAGE_TYPES: { value: PageType; label: string }[] = [
 
 export const ProjectView: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { getProject, getClient, addPage, deletePage, updateNavigationConfig, updateFooterConfig, updateActiveComponents } = useBuilderStore();
+  const { getProject, getClient, addPage, deletePage, updateNavigationConfig, updateFooterConfig, updateWelcomePageConfig, updateActiveComponents } = useBuilderStore();
   const [newPageName, setNewPageName] = useState('');
   const [newPageType, setNewPageType] = useState<PageType>('content');
   const [isAdding, setIsAdding] = useState(false);
   const [showNavSettings, setShowNavSettings] = useState(false);
   const [showFooterSettings, setShowFooterSettings] = useState(false);
+  const [showWelcomePageSettings, setShowWelcomePageSettings] = useState(false);
   const [showComponentSettings, setShowComponentSettings] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -66,6 +69,12 @@ export const ProjectView: React.FC = () => {
   const handleSaveActiveComponents = (activeComponents: ComponentType[]) => {
     if (projectId) {
       updateActiveComponents(projectId, activeComponents);
+    }
+  };
+
+  const handleSaveWelcomePage = (config: WelcomePageConfig) => {
+    if (projectId) {
+      updateWelcomePageConfig(projectId, config);
     }
   };
 
@@ -270,6 +279,37 @@ export const ProjectView: React.FC = () => {
               <div className="text-sm text-wire-500 italic">Not configured</div>
             )}
           </div>
+
+          {/* Welcome Page Settings */}
+          <div className="p-4 bg-wire-200 border border-wire-300 rounded">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-bold text-wire-800">Welcome Page</h3>
+                <p className="text-sm text-wire-600 mt-1">
+                  Configure the client-facing welcome page
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWelcomePageSettings(true)}
+                className="px-3 py-1.5 text-sm bg-wire-600 text-wire-100 rounded hover:bg-wire-700 transition-colors"
+              >
+                {project.welcomePageConfig ? 'Edit' : 'Configure'}
+              </button>
+            </div>
+            {project.welcomePageConfig ? (
+              <div className="text-sm text-wire-600 flex flex-wrap gap-x-3 gap-y-1">
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  Configured
+                </span>
+                {project.welcomePageConfig.clientLogo && <span>Client logo</span>}
+                {project.welcomePageConfig.projectDate && <span>Date set</span>}
+                {project.welcomePageConfig.introCopy && <span>Intro copy</span>}
+              </div>
+            ) : (
+              <div className="text-sm text-wire-500 italic">Not configured</div>
+            )}
+          </div>
         </div>
 
         {/* Component Settings */}
@@ -468,6 +508,16 @@ export const ProjectView: React.FC = () => {
         onSave={handleSaveActiveComponents}
         isOpen={showComponentSettings}
         onClose={() => setShowComponentSettings(false)}
+      />
+
+      {/* Welcome Page Settings Modal */}
+      <WelcomePageSettings
+        config={project.welcomePageConfig}
+        projectName={project.name}
+        clientName={client?.name || 'Client'}
+        onSave={handleSaveWelcomePage}
+        isOpen={showWelcomePageSettings}
+        onClose={() => setShowWelcomePageSettings(false)}
       />
     </div>
   );

@@ -3,13 +3,14 @@ import { useParams, Navigate } from 'react-router-dom';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
 import { SiteNavigation } from '../components/wireframe/SiteNavigation';
 import { SiteFooter } from '../components/wireframe/SiteFooter';
+import { WelcomePage } from '../components/wireframe/WelcomePage';
 import type { Project, Page } from '../types/builder';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions';
 
 export const Publish: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
-  const [project, setProject] = useState<Project | null>(null);
+  const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
+  const [project, setProject] = useState<Project & { clientName?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -67,7 +68,14 @@ export const Publish: React.FC = () => {
   }
 
   const pages = project.pages || [];
-  const currentPage = pages[currentPageIndex];
+  
+  // If no pageId specified, show welcome page
+  const showWelcomePage = !pageId;
+  
+  // If pageId is specified, find that page
+  const currentPage = pageId 
+    ? pages.find(p => p.id === pageId)
+    : pages[currentPageIndex];
 
   if (pages.length === 0) {
     return (
@@ -76,6 +84,21 @@ export const Publish: React.FC = () => {
           <p className="text-wire-500 mb-4">This project has no pages</p>
         </div>
       </div>
+    );
+  }
+
+  // Show welcome page if no pageId or if explicitly showing welcome
+  if (showWelcomePage) {
+    return (
+      <WelcomePage
+        config={project.welcomePageConfig}
+        projectName={project.name}
+        clientName={project.clientName || 'Client'}
+        pages={pages}
+        onNavigateToPage={(pageId) => {
+          window.location.href = `/publish/${projectId}/${pageId}`;
+        }}
+      />
     );
   }
 
