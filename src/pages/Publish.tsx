@@ -4,9 +4,95 @@ import { ComponentRenderer } from '../components/builder/ComponentRenderer';
 import { SiteNavigation } from '../components/wireframe/SiteNavigation';
 import { SiteFooter } from '../components/wireframe/SiteFooter';
 import { WelcomePage } from '../components/wireframe/WelcomePage';
-import type { Project, Page } from '../types/builder';
+import { getHelpText } from '../utils/componentHelp';
+import { getComponentMeta } from '../components/builder/componentRegistry';
+import type { Project, Page, PlacedComponent } from '../types/builder';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions';
+
+// Component wrapper with info icon for annotations
+const AnnotatedComponent: React.FC<{
+  component: PlacedComponent;
+  showAnnotations: boolean;
+  onShowHelp: (component: PlacedComponent) => void;
+}> = ({ component, showAnnotations, onShowHelp }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const meta = getComponentMeta(component.type);
+
+  return (
+    <div
+      className="relative group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <ComponentRenderer type={component.type} props={component.props} />
+      
+      {/* Info icon - appears on hover when annotations are enabled */}
+      {showAnnotations && isHovered && (
+        <button
+          onClick={() => onShowHelp(component)}
+          className="absolute top-4 left-4 w-8 h-8 bg-wire-700 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg hover:bg-wire-800 transition-colors z-20"
+          title={`About: ${meta?.label || component.type}`}
+        >
+          i
+        </button>
+      )}
+    </div>
+  );
+};
+
+// Help text popup/modal
+const HelpPopup: React.FC<{
+  component: PlacedComponent | null;
+  onClose: () => void;
+}> = ({ component, onClose }) => {
+  if (!component) return null;
+
+  const meta = getComponentMeta(component.type);
+  const helpText = getHelpText(component.type, component.helpText);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-wire-200 bg-wire-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-wire-700 text-white rounded-full flex items-center justify-center text-sm font-bold">
+              i
+            </div>
+            <div>
+              <h3 className="font-bold text-wire-800">{meta?.label || component.type}</h3>
+              <p className="text-xs text-wire-500">{meta?.category}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-wire-500 hover:text-wire-800 rounded"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 overflow-y-auto">
+          <p className="text-wire-700 leading-relaxed whitespace-pre-wrap">{helpText}</p>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-wire-200 bg-wire-50">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-wire-700 text-white rounded hover:bg-wire-800 transition-colors"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const Publish: React.FC = () => {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
@@ -14,6 +100,8 @@ export const Publish: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [showAnnotations, setShowAnnotations] = useState(true);
+  const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -175,14 +263,21 @@ export const Publish: React.FC = () => {
             {currentPage.components
               .sort((a, b) => a.order - b.order)
               .map((component) => (
-                <ComponentRenderer
+                <AnnotatedComponent
                   key={component.id}
-                  type={component.type}
-                  props={component.props}
+                  component={component}
+                  showAnnotations={showAnnotations}
+                  onShowHelp={setActiveHelpComponent}
                 />
               ))}
           </div>
         )}
+
+        {/* Help text popup */}
+        <HelpPopup
+          component={activeHelpComponent}
+          onClose={() => setActiveHelpComponent(null)}
+        />
 
         {/* Site Footer */}
         {project.footerConfig && (
