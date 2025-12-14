@@ -62,8 +62,38 @@ export const MigrateData: React.FC = () => {
       if (jsonData) {
         // Use uploaded JSON data
         setStatus('Using uploaded JSON data...');
-        clients = jsonData.clients || [];
-        projects = jsonData.projects || [];
+        // Handle different JSON structures
+        if (Array.isArray(jsonData)) {
+          // If JSON is an array, it might be the projects array
+          projects = jsonData;
+          clients = [];
+        } else if (jsonData.clients && jsonData.projects) {
+          // Standard structure: { clients: [], projects: [] }
+          clients = jsonData.clients || [];
+          projects = jsonData.projects || [];
+        } else if (jsonData.clients) {
+          // Only clients in JSON
+          clients = jsonData.clients || [];
+          projects = [];
+        } else if (jsonData.projects) {
+          // Only projects in JSON - try to extract client info from projects
+          projects = jsonData.projects || [];
+          // Extract unique clients from projects
+          const clientMap = new Map();
+          projects.forEach((p: any) => {
+            if (p.clientId && !clientMap.has(p.clientId)) {
+              // Try to find client name from project data or use a placeholder
+              clientMap.set(p.clientId, {
+                id: p.clientId,
+                name: p.clientName || 'Unknown Client',
+              });
+            }
+          });
+          clients = Array.from(clientMap.values());
+        } else {
+          throw new Error('Invalid JSON structure. Expected { "clients": [], "projects": [] }');
+        }
+        setStatus(`Loaded ${clients.length} client(s) and ${projects.length} project(s) from JSON`);
       } else {
         // Fall back to localStorage
         setStatus('Loading data from localStorage...');
@@ -78,7 +108,11 @@ export const MigrateData: React.FC = () => {
       );
 
       if (!farleighClient) {
-        throw new Error('Farleigh Hospice client not found in localStorage');
+        const clientNames = clients.map((c: any) => c.name).join(', ');
+        throw new Error(
+          `Farleigh Hospice client not found. Available clients: ${clientNames || 'none'}. ` +
+          `Please check your JSON file structure. Expected: { "clients": [...], "projects": [...] }`
+        );
       }
 
       setStatus(`Found client: ${farleighClient.name}`);
@@ -171,10 +205,26 @@ export const MigrateData: React.FC = () => {
             className="block w-full text-sm text-wire-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-wire-600 file:text-white hover:file:bg-wire-700"
           />
           {jsonData && (
-            <p className="text-sm text-green-700 mt-2">
-              ✅ JSON loaded: {jsonData.clients?.length || 0} client(s),{' '}
-              {jsonData.projects?.length || 0} project(s)
-            </p>
+            <div className="text-sm text-green-700 mt-2">
+              <p className="font-semibold">✅ JSON loaded successfully</p>
+              <div className="mt-2 text-xs text-wire-600">
+                <p>Structure detected:</p>
+                <ul className="list-disc list-inside ml-2">
+                  <li>Clients: {jsonData.clients?.length || 0}</li>
+                  <li>Projects: {jsonData.projects?.length || 0}</li>
+                </ul>
+                {jsonData.clients && jsonData.clients.length > 0 && (
+                  <div className="mt-2">
+                    <p className="font-semibold">Client names found:</p>
+                    <ul className="list-disc list-inside ml-2">
+                      {jsonData.clients.map((c: any, i: number) => (
+                        <li key={i}>{c.name || `Client ${i + 1}`}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
 
