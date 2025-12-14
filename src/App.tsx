@@ -10,6 +10,7 @@ import { Preview } from './pages/Preview';
 import { WireframeShowcase } from './pages/WireframeShowcase';
 import { Login } from './pages/Login';
 import { Debug } from './pages/Debug';
+import { MigrateData } from './pages/MigrateData';
 import { getCurrentSession } from './lib/supabase';
 
 function AppContent() {
@@ -41,6 +42,16 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        
+        {/* Migration tool (protected) */}
+        <Route
+          path="/migrate"
+          element={
+            <AuthGuard>
+              <MigrateData />
+            </AuthGuard>
+          }
+        />
         
         {/* Protected routes */}
         <Route
