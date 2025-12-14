@@ -86,6 +86,29 @@ export const ProjectView: React.FC = () => {
     exportProjectJSON(project);
   };
 
+  const getPublishUrl = () => {
+    if (!projectId) return '';
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/publish/${projectId}`;
+  };
+
+  const handleCopyPublishUrl = async () => {
+    const url = getPublishUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('Publish URL copied to clipboard!');
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Publish URL copied to clipboard!');
+    }
+  };
+
   const getPageTypeLabel = (type: PageType) => {
     return PAGE_TYPES.find((t) => t.value === type)?.label || type;
   };
@@ -109,13 +132,50 @@ export const ProjectView: React.FC = () => {
 
       {/* Main content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {/* Publish Section */}
+        <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-green-800">Publish & Share</h3>
+              <p className="text-sm text-green-700 mt-1">
+                Get a shareable link to view this project (no login required)
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCopyPublishUrl}
+                disabled={project.pages.length === 0}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                🔗 Copy Publish Link
+              </button>
+              <a
+                href={getPublishUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-green-200 text-green-800 rounded hover:bg-green-300 transition-colors no-underline"
+              >
+                Open in New Tab
+              </a>
+            </div>
+          </div>
+          {project.pages.length === 0 && (
+            <p className="text-xs text-green-600 mt-2">Add at least one page to publish</p>
+          )}
+          {project.pages.length > 0 && (
+            <div className="mt-3 p-2 bg-white rounded border border-green-200">
+              <p className="text-xs text-green-700 font-mono break-all">{getPublishUrl()}</p>
+            </div>
+          )}
+        </div>
+
         {/* Export Section */}
         <div className="mb-8 p-4 bg-wire-50 border border-wire-200 rounded">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="font-bold text-wire-800">Share & Export</h3>
+              <h3 className="font-bold text-wire-800">Export</h3>
               <p className="text-sm text-wire-600 mt-1">
-                Export for client review or backup your work
+                Download static files for hosting or backup
               </p>
             </div>
             <div className="flex gap-3">

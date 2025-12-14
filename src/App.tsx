@@ -11,6 +11,7 @@ import { WireframeShowcase } from './pages/WireframeShowcase';
 import { Login } from './pages/Login';
 import { Debug } from './pages/Debug';
 import { MigrateData } from './pages/MigrateData';
+import { Publish } from './pages/Publish';
 import { getCurrentSession } from './lib/supabase';
 
 function AppContent() {
@@ -42,6 +43,8 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/publish/:projectId" element={<Publish />} />
+        <Route path="/publish/:projectId/:pageId" element={<Publish />} />
         
         {/* Migration tool (protected) */}
         <Route
