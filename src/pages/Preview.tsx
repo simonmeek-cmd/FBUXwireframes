@@ -95,26 +95,29 @@ const HelpPopup: React.FC<{
 
 export const Preview: React.FC = () => {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
-  const { getProject, getClient, loading, initialize } = useBuilderStore();
+  const { getProject, getClient, loading, initialize, projects } = useBuilderStore();
   const previewRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
-  const [initialized, setInitialized] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Ensure store is initialized
+  // Ensure store is initialized (only once)
   useEffect(() => {
-    if (!initialized && !loading) {
-      initialize().then(() => setInitialized(true));
+    if (!hasInitialized && !loading && projects.length === 0) {
+      setHasInitialized(true);
+      initialize().catch(console.error);
+    } else if (projects.length > 0) {
+      setHasInitialized(true);
     }
-  }, [initialized, loading, initialize]);
+  }, []); // Empty deps - only run once on mount
 
   const project = projectId ? getProject(projectId) : undefined;
   const client = project ? getClient(project.clientId) : undefined;
 
   // Show loading state while initializing
-  if (loading || !initialized) {
+  if (loading || (!hasInitialized && projects.length === 0)) {
     return (
       <div className="min-h-screen bg-wire-100 flex items-center justify-center">
         <div className="text-wire-600">Loading...</div>
