@@ -25,6 +25,24 @@ export const MigrateData: React.FC = () => {
   const [status, setStatus] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [migrated, setMigrated] = useState(false);
+  const [jsonData, setJsonData] = useState<any>(null);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        setJsonData(data);
+        setStatus('✅ JSON file loaded successfully!');
+      } catch (error) {
+        setStatus('❌ Error: Invalid JSON file');
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const migrateFarleighHospice = async () => {
     setLoading(true);
@@ -37,10 +55,21 @@ export const MigrateData: React.FC = () => {
         throw new Error('Please log in first');
       }
 
-      // Load data from localStorage
-      setStatus('Loading data from localStorage...');
-      const clients = loadClients();
-      const projects = loadProjects();
+      // Load data from JSON file or localStorage
+      let clients: any[] = [];
+      let projects: any[] = [];
+
+      if (jsonData) {
+        // Use uploaded JSON data
+        setStatus('Using uploaded JSON data...');
+        clients = jsonData.clients || [];
+        projects = jsonData.projects || [];
+      } else {
+        // Fall back to localStorage
+        setStatus('Loading data from localStorage...');
+        clients = loadClients();
+        projects = loadProjects();
+      }
 
       // Find Farleigh Hospice client
       const farleighClient = clients.find((c: any) =>
@@ -110,9 +139,9 @@ export const MigrateData: React.FC = () => {
     }
   };
 
-  // Check if data exists in localStorage
-  const clients = loadClients();
-  const projects = loadProjects();
+  // Check if data exists in JSON or localStorage
+  const clients = jsonData?.clients || loadClients();
+  const projects = jsonData?.projects || loadProjects();
   const farleighClient = clients.find((c: any) =>
     c.name.toLowerCase().includes('farleigh') ||
     c.name.toLowerCase().includes('hospice')
@@ -126,8 +155,28 @@ export const MigrateData: React.FC = () => {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold text-wire-800 mb-4">Data Migration</h1>
         <p className="text-wire-600 mb-6">
-          Migrate Farleigh Hospice client from localStorage to Supabase
+          Migrate Farleigh Hospice client from JSON backup or localStorage to Supabase
         </p>
+
+        {/* File Upload Section */}
+        <div className="bg-wire-50 border border-wire-300 rounded p-6 mb-6">
+          <h2 className="font-bold text-wire-800 mb-3">Upload JSON Backup</h2>
+          <p className="text-sm text-wire-600 mb-3">
+            If you have a JSON backup file, upload it here. Otherwise, we'll try to use localStorage.
+          </p>
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleFileUpload}
+            className="block w-full text-sm text-wire-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-wire-600 file:text-white hover:file:bg-wire-700"
+          />
+          {jsonData && (
+            <p className="text-sm text-green-700 mt-2">
+              ✅ JSON loaded: {jsonData.clients?.length || 0} client(s),{' '}
+              {jsonData.projects?.length || 0} project(s)
+            </p>
+          )}
+        </div>
 
         {farleighClient ? (
           <div className="bg-wire-50 border border-wire-300 rounded p-6 mb-6">
@@ -144,8 +193,8 @@ export const MigrateData: React.FC = () => {
         ) : (
           <div className="bg-yellow-50 border border-yellow-300 rounded p-6 mb-6">
             <p className="text-yellow-800">
-              ⚠️ Farleigh Hospice client not found in localStorage. Make sure you're running this
-              on the same browser/device where you have the data.
+              ⚠️ Farleigh Hospice client not found. Please upload your JSON backup file above, or
+              make sure you're on the same browser/device where you have the localStorage data.
             </p>
           </div>
         )}
@@ -168,11 +217,16 @@ export const MigrateData: React.FC = () => {
           ) : (
             <button
               onClick={migrateFarleighHospice}
-              disabled={loading || !farleighClient}
+              disabled={loading || (!farleighClient && !jsonData)}
               className="px-4 py-2 bg-wire-600 text-white rounded hover:bg-wire-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Migrating...' : 'Start Migration'}
             </button>
+            {!farleighClient && jsonData && (
+              <p className="text-sm text-wire-600 mt-2">
+                Note: Will migrate from uploaded JSON file
+              </p>
+            )}
           )}
         </div>
       </div>
