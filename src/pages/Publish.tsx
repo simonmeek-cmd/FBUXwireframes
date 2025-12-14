@@ -160,15 +160,15 @@ export const Publish: React.FC = () => {
   // If no pageId specified, show welcome page
   const showWelcomePage = !pageId;
   
-  // Sync currentPageIndex with pageId from URL
+  // Sync currentPageIndex with pageId from URL - only depend on pageId and project.id to avoid loops
   useEffect(() => {
-    if (pageId && pages.length > 0) {
-      const index = pages.findIndex(p => p.id === pageId);
+    if (pageId && project.pages && project.pages.length > 0) {
+      const index = project.pages.findIndex(p => p.id === pageId);
       if (index !== -1) {
         setCurrentPageIndex(index);
       }
     }
-  }, [pageId, pages]);
+  }, [pageId, project.id]); // Only depend on pageId and project.id, not the pages array
   
   // If pageId is specified, find that page
   const currentPage = pageId 
