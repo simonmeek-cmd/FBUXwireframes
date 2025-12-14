@@ -27,8 +27,10 @@ const apiRequest = async <T>(
 
   if (!response.ok) {
     if (response.status === 401) {
-      // Unauthorized - redirect to login
-      window.location.href = '/login';
+      // Unauthorized - only redirect if not already on login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       throw new Error('Unauthorized');
     }
     

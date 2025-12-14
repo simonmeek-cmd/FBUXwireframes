@@ -86,6 +86,16 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   
   // Initialize from API
   initialize: async () => {
+    // Check if user is authenticated first
+    const { getCurrentSession } = await import('../lib/supabase');
+    const session = await getCurrentSession();
+    
+    if (!session) {
+      // Not authenticated - don't try to load data
+      set({ loading: false, error: null });
+      return;
+    }
+
     set({ loading: true, error: null });
     try {
       const [clientsData, projectsData] = await Promise.all([

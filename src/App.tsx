@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useBuilderStore } from './stores/useBuilderStore';
 import { AuthGuard } from './components/auth/AuthGuard';
 import { Dashboard } from './pages/Dashboard';
@@ -10,16 +10,34 @@ import { Preview } from './pages/Preview';
 import { WireframeShowcase } from './pages/WireframeShowcase';
 import { Login } from './pages/Login';
 import { Debug } from './pages/Debug';
+import { getCurrentSession } from './lib/supabase';
 
-function App() {
+function AppContent() {
   const initialize = useBuilderStore((state) => state.initialize);
+  const location = useLocation();
 
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    // Only initialize if user is authenticated and not on login page
+    const initIfAuthenticated = async () => {
+      if (location.pathname === '/login') {
+        return; // Don't initialize on login page
+      }
+      
+      const session = await getCurrentSession();
+      if (session) {
+        initialize();
+      }
+    };
+    initIfAuthenticated();
+  }, [initialize, location.pathname]);
 
+  return null; // This component just handles initialization
+}
+
+function App() {
   return (
     <BrowserRouter>
+      <AppContent />
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
