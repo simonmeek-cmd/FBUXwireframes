@@ -90,8 +90,19 @@ export const MigrateData: React.FC = () => {
             }
           });
           clients = Array.from(clientMap.values());
+        } else if (jsonData.clientId || jsonData.name) {
+          // Single project object - extract client name from navigation/footer config
+          const clientName = jsonData.navigationConfig?.logoText || 
+                            jsonData.footerConfig?.logoText || 
+                            'Farleigh Hospice'; // Default fallback
+          clients = [{
+            id: jsonData.clientId || 'temp-client-id',
+            name: clientName,
+          }];
+          projects = [jsonData]; // Wrap single project in array
+          setStatus(`Detected single project export. Client: ${clientName}`);
         } else {
-          throw new Error('Invalid JSON structure. Expected { "clients": [], "projects": [] }');
+          throw new Error('Invalid JSON structure. Expected { "clients": [], "projects": [] } or a single project object');
         }
         setStatus(`Loaded ${clients.length} client(s) and ${projects.length} project(s) from JSON`);
       } else {
@@ -150,12 +161,12 @@ export const MigrateData: React.FC = () => {
           for (let i = 0; i < oldProject.pages.length; i++) {
             const oldPage = oldProject.pages[i];
             await pagesApi.create({
-              project_id: newProject.id,
+              projectId: newProject.id,
               name: oldPage.name,
               type: oldPage.type,
               components: oldPage.components || [],
-              order_index: i,
-            });
+              orderIndex: i,
+            } as any); // Type assertion needed due to API client conversion
             pagesMigrated++;
           }
         }
@@ -210,8 +221,23 @@ export const MigrateData: React.FC = () => {
               <div className="mt-2 text-xs text-wire-600">
                 <p>Structure detected:</p>
                 <ul className="list-disc list-inside ml-2">
-                  <li>Clients: {jsonData.clients?.length || 0}</li>
-                  <li>Projects: {jsonData.projects?.length || 0}</li>
+                  {jsonData.clients ? (
+                    <>
+                      <li>Clients: {jsonData.clients.length || 0}</li>
+                      <li>Projects: {jsonData.projects?.length || 0}</li>
+                    </>
+                  ) : jsonData.clientId || jsonData.name ? (
+                    <>
+                      <li>Single project export detected</li>
+                      <li>Project: {jsonData.name || 'Unnamed Project'}</li>
+                      <li>Client name: {jsonData.navigationConfig?.logoText || jsonData.footerConfig?.logoText || 'Not found'}</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Clients: {jsonData.clients?.length || 0}</li>
+                      <li>Projects: {jsonData.projects?.length || 0}</li>
+                    </>
+                  )}
                 </ul>
                 {jsonData.clients && jsonData.clients.length > 0 && (
                   <div className="mt-2">
