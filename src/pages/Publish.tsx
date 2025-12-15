@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
 import { SiteNavigation } from '../components/wireframe/SiteNavigation';
@@ -159,17 +159,11 @@ export const Publish: React.FC = () => {
   // If no pageId specified, show welcome page
   const showWelcomePage = !pageId;
   
-  // Derive current page index from pageId without state to avoid render loops
-  const currentPageIndex = useMemo(() => {
-    if (pageId && pages.length > 0) {
-      const idx = pages.findIndex((p) => p.id === pageId);
-      return idx >= 0 ? idx : 0;
-    }
-    return 0;
-  }, [pageId, pages]);
-  
-  // If pageId is specified, find that page
-  const currentPage = pages[currentPageIndex];
+  // Derive current page directly (no extra state/effect)
+  const currentPage = pageId
+    ? pages.find((p) => p.id === pageId) || pages[0]
+    : pages[0];
+  const currentPageIndex = currentPage ? pages.findIndex((p) => p.id === currentPage.id) : 0;
 
   if (pages.length === 0) {
     return (
