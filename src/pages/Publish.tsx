@@ -213,14 +213,26 @@ export const Publish: React.FC = () => {
               // Go back to welcome screen
               window.location.href = `/publish/${projectId}`;
             }}
-            className={`flex items-center justify-center w-8 h-8 rounded-full border text-xs font-bold transition-colors ${
+            className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors ${
               !pageId
                 ? 'bg-wire-600 text-white border-wire-600'
                 : 'bg-wire-50 text-wire-700 border-wire-400 hover:bg-wire-300'
             }`}
             title="Back to welcome page"
           >
-            🏠
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+              <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            </svg>
           </button>
 
           {/* Page tabs */}
