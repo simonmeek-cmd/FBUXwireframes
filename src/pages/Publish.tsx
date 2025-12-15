@@ -187,6 +187,9 @@ export const Publish: React.FC = () => {
         onNavigateToPage={(pageId) => {
           window.location.href = `/publish/${projectId}/${pageId}`;
         }}
+        onOpenShowcase={() => {
+          window.location.href = `/publish/${projectId}/showcase`;
+        }}
       />
     );
   }

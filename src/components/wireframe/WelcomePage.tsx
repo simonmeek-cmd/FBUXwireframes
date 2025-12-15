@@ -9,6 +9,7 @@ interface WelcomePageProps {
   clientName: string;
   pages: Page[];
   onNavigateToPage: (pageId: string) => void;
+  onOpenShowcase?: () => void;
 }
 
 export const WelcomePage: React.FC<WelcomePageProps> = ({
@@ -17,6 +18,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
   clientName,
   pages,
   onNavigateToPage,
+  onOpenShowcase,
 }) => {
   const welcomeConfig = config || defaultWelcomePageConfig;
   const introCopy = welcomeConfig.introCopy || '';
@@ -121,8 +123,14 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         {/* Link to showcase */}
         <div className="mt-8 pt-8 border-t border-wire-300">
           <a
-            href="/publish/showcase"
-            className="text-wire-600 hover:text-wire-800 underline"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (onOpenShowcase) {
+                onOpenShowcase();
+              }
+            }}
+            className="text-wire-600 hover:text-wire-800 underline cursor-pointer"
           >
             View Component Showcase →
           </a>

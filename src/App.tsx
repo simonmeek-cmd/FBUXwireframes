@@ -8,6 +8,7 @@ import { ProjectView } from './pages/ProjectView';
 import { PageBuilder } from './pages/PageBuilder';
 import { Preview } from './pages/Preview';
 import { WireframeShowcase } from './pages/WireframeShowcase';
+import { PublishShowcase } from './pages/PublishShowcase';
 import { Login } from './pages/Login';
 import { Debug } from './pages/Debug';
 import { MigrateData } from './pages/MigrateData';
@@ -57,6 +58,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/publish/:projectId" element={PUBLISH_ROUTE_DIAG ? <PublishDiag /> : <Publish />} />
         <Route path="/publish/:projectId/:pageId" element={PUBLISH_ROUTE_DIAG ? <PublishDiag /> : <Publish />} />
+        <Route path="/publish/:projectId/showcase" element={<PublishShowcase />} />
         
         {/* Migration tool (protected) */}
         <Route
