@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
 import { SiteNavigation } from '../components/wireframe/SiteNavigation';
@@ -99,10 +99,8 @@ export const Publish: React.FC = () => {
   const [project, setProject] = useState<Project & { clientName?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
-  const previousPageIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -161,30 +159,17 @@ export const Publish: React.FC = () => {
   // If no pageId specified, show welcome page
   const showWelcomePage = !pageId;
   
-  // Sync currentPageIndex with pageId from URL - use ref to prevent infinite loops
-  useEffect(() => {
-    // Only update if pageId actually changed
-    if (pageId === previousPageIdRef.current) {
-      return;
+  // Derive current page index from pageId without state to avoid render loops
+  const currentPageIndex = useMemo(() => {
+    if (pageId && pages.length > 0) {
+      const idx = pages.findIndex((p) => p.id === pageId);
+      return idx >= 0 ? idx : 0;
     }
-    
-    if (pageId && project?.pages && project.pages.length > 0) {
-      const index = project.pages.findIndex(p => p.id === pageId);
-      if (index !== -1) {
-        setCurrentPageIndex(index);
-        previousPageIdRef.current = pageId;
-      }
-    } else if (!pageId) {
-      // Reset when no pageId
-      previousPageIdRef.current = undefined;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageId, project?.id]); // Only depend on pageId and project.id - ref prevents loops
+    return 0;
+  }, [pageId, pages]);
   
   // If pageId is specified, find that page
-  const currentPage = pageId 
-    ? pages.find(p => p.id === pageId)
-    : pages[currentPageIndex];
+  const currentPage = pages[currentPageIndex];
 
   if (pages.length === 0) {
     return (
@@ -217,7 +202,6 @@ export const Publish: React.FC = () => {
 
   const goToPage = (index: number) => {
     if (index >= 0 && index < pages.length) {
-      setCurrentPageIndex(index);
       // Navigate to the page using the page ID
       window.location.href = `/publish/${projectId}/${pages[index].id}`;
     }
