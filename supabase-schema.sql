@@ -36,15 +36,17 @@ CREATE TABLE pages (
   order_index INTEGER DEFAULT 0
 );
 
--- Comments table (for Phase 2 - annotations)
+-- Comments table (public commenting on published wireframes)
 CREATE TABLE comments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   page_id UUID REFERENCES pages(id) ON DELETE CASCADE,
-  component_id TEXT,
+  target_id TEXT, -- e.g., component id
+  x_pct NUMERIC,  -- 0..1 relative x within target box
+  y_pct NUMERIC,  -- 0..1 relative y within target box
   comment_text TEXT NOT NULL,
   author_name TEXT NOT NULL,
-  author_email TEXT NOT NULL,
+  author_email TEXT,
   status TEXT DEFAULT 'new' CHECK (status IN ('new', 'resolved', 'archived')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   resolved_at TIMESTAMP WITH TIME ZONE,
@@ -103,12 +105,12 @@ CREATE POLICY "Users can update pages" ON pages
 CREATE POLICY "Users can delete pages" ON pages
   FOR DELETE USING (auth.role() = 'authenticated');
 
--- Comments: Anyone can create, authenticated users can read/update
+-- Comments: anyone can create; anyone can view (publish); updates restricted
 CREATE POLICY "Anyone can create comments" ON comments
   FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Users can view comments" ON comments
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Anyone can view comments" ON comments
+  FOR SELECT USING (true);
 
 CREATE POLICY "Users can update comments" ON comments
   FOR UPDATE USING (auth.role() = 'authenticated');

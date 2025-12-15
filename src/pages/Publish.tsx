@@ -8,6 +8,19 @@ import { getHelpText } from '../utils/componentHelp';
 import { getComponentMeta } from '../components/builder/componentRegistry';
 import type { Project, Page, PlacedComponent } from '../types/builder';
 
+type CommentRecord = {
+  id: string;
+  project_id: string;
+  page_id: string | null;
+  target_id: string | null;
+  x_pct: number | null;
+  y_pct: number | null;
+  comment_text: string;
+  author_name: string;
+  author_email: string | null;
+  created_at: string;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions';
 
 // Component wrapper with info icon for annotations
@@ -15,13 +28,26 @@ const AnnotatedComponent: React.FC<{
   component: PlacedComponent;
   showAnnotations: boolean;
   onShowHelp: (component: PlacedComponent) => void;
-}> = ({ component, showAnnotations, onShowHelp }) => {
+  commentMode: boolean;
+  comments: CommentRecord[];
+  onAddComment: (targetId: string, xPct: number, yPct: number) => void;
+}> = ({ component, showAnnotations, onShowHelp, commentMode, comments, onAddComment }) => {
   const [isHovered, setIsHovered] = useState(false);
   const meta = getComponentMeta(component.type);
 
   return (
     <div
       className="relative group"
+      onClick={(e) => {
+        if (!commentMode) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const xPct = (e.clientX - rect.left) / rect.width;
+        const yPct = (e.clientY - rect.top) / rect.height;
+        onAddComment(component.id, xPct, yPct);
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -37,6 +63,23 @@ const AnnotatedComponent: React.FC<{
           i
         </button>
       )}
+
+      {/* Comment markers */}
+      {comments.map((c) => {
+        if (c.x_pct == null || c.y_pct == null) return null;
+        return (
+          <div
+            key={c.id}
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${c.x_pct * 100}%`, top: `${c.y_pct * 100}%` }}
+            title={`${c.author_name}: ${c.comment_text}`}
+          >
+            <div className="w-8 h-8 rounded-full bg-wire-700 text-white text-sm font-bold flex items-center justify-center shadow">
+              {c.author_name?.[0]?.toUpperCase() || '?'}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -101,6 +144,9 @@ export const Publish: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
+  const [commentMode, setCommentMode] = useState(false);
+  const [comments, setComments] = useState<CommentRecord[]>([]);
+  const [authorName, setAuthorName] = useState<string>(() => localStorage.getItem('wb_comment_author') || '');
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -159,11 +205,69 @@ export const Publish: React.FC = () => {
   // If no pageId specified, show welcome page
   const showWelcomePage = !pageId;
   
+  // Load comments for this project/page
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!projectId) return;
+      try {
+        const url = new URL(`${API_BASE_URL}/comments`, window.location.origin);
+        url.searchParams.set('projectId', projectId);
+        if (pageId) url.searchParams.set('pageId', pageId);
+        const res = await fetch(url.toString());
+        if (!res.ok) return;
+        const data = await res.json();
+        setComments(data || []);
+      } catch (err) {
+        console.error('Error fetching comments', err);
+      }
+    };
+    fetchComments();
+  }, [projectId, pageId]);
+  
   // Derive current page directly (no extra state/effect)
   const currentPage = pageId
     ? pages.find((p) => p.id === pageId) || pages[0]
     : pages[0];
   const currentPageIndex = currentPage ? pages.findIndex((p) => p.id === currentPage.id) : 0;
+
+  const handleAddComment = async (targetId: string, xPct: number, yPct: number) => {
+    let name = authorName;
+    if (!name) {
+      name = window.prompt('Your name (shown with comment):', '') || '';
+      if (!name.trim()) return;
+      setAuthorName(name);
+      localStorage.setItem('wb_comment_author', name);
+    }
+    const message = window.prompt('Add comment:', '');
+    if (!message || !message.trim()) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          pageId: pageId || null,
+          targetId,
+          xPct,
+          yPct,
+          authorName: name.trim(),
+          message: message.trim(),
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setComments((prev) => [...prev, created]);
+      }
+    } catch (err) {
+      console.error('Error posting comment', err);
+    }
+  };
+
+  const pageComments = comments.filter((c) => {
+    if (pageId) return c.page_id === pageId;
+    return !c.page_id;
+  });
 
   if (pages.length === 0) {
     return (
@@ -203,6 +307,19 @@ export const Publish: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-wire-50">
+      {/* Comment mode toggle */}
+      <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-50 flex items-center gap-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={commentMode}
+            onChange={(e) => setCommentMode(e.target.checked)}
+          />
+          <span>Add comments</span>
+        </label>
+        {commentMode && <span className="text-xs text-wire-500">Click on a component to place a comment</span>}
+      </div>
+
       {/* Page navigation tabs */}
       {pages.length > 1 && (
         <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-40">
@@ -270,6 +387,9 @@ export const Publish: React.FC = () => {
                   component={component}
                   showAnnotations={showAnnotations}
                   onShowHelp={setActiveHelpComponent}
+                  commentMode={commentMode}
+                  comments={pageComments.filter((c) => c.target_id === component.id)}
+                  onAddComment={handleAddComment}
                 />
               ))}
           </div>
