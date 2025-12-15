@@ -8,6 +8,9 @@ import { getHelpText } from '../utils/componentHelp';
 import { getComponentMeta } from '../components/builder/componentRegistry';
 import type { Project, Page, PlacedComponent } from '../types/builder';
 
+// Temporary switch to isolate React #310 loop; set to true to re-enable comments
+const COMMENTS_ENABLED = false;
+
 type CommentRecord = {
   id: string;
   project_id: string;
@@ -207,6 +210,7 @@ export const Publish: React.FC = () => {
   
   // Load comments for this project/page
   useEffect(() => {
+    if (!COMMENTS_ENABLED) return;
     let isMounted = true;
     const fetchComments = async () => {
       if (!projectId) return;
@@ -234,6 +238,7 @@ export const Publish: React.FC = () => {
   const currentPageIndex = currentPage ? pages.findIndex((p) => p.id === currentPage.id) : 0;
 
   const handleAddComment = async (targetId: string, xPct: number, yPct: number) => {
+    if (!COMMENTS_ENABLED) return;
     let name = authorName;
     if (!name) {
       name = window.prompt('Your name (shown with comment):', '') || '';
@@ -310,18 +315,20 @@ export const Publish: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-wire-50">
-      {/* Comment mode toggle */}
-      <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-50 flex items-center gap-3">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={commentMode}
-            onChange={(e) => setCommentMode(e.target.checked)}
-          />
-          <span>Add comments</span>
-        </label>
-        {commentMode && <span className="text-xs text-wire-500">Click on a component to place a comment</span>}
-      </div>
+      {/* Comment mode toggle (disabled while isolating loop) */}
+      {COMMENTS_ENABLED && (
+        <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-50 flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={commentMode}
+              onChange={(e) => setCommentMode(e.target.checked)}
+            />
+            <span>Add comments</span>
+          </label>
+          {commentMode && <span className="text-xs text-wire-500">Click on a component to place a comment</span>}
+        </div>
+      )}
 
       {/* Page navigation tabs */}
       {pages.length > 1 && (
@@ -390,9 +397,9 @@ export const Publish: React.FC = () => {
                   component={component}
                   showAnnotations={showAnnotations}
                   onShowHelp={setActiveHelpComponent}
-                  commentMode={commentMode}
-                  comments={pageComments.filter((c) => c.target_id === component.id)}
-                  onAddComment={handleAddComment}
+              commentMode={COMMENTS_ENABLED ? commentMode : false}
+              comments={COMMENTS_ENABLED ? pageComments.filter((c) => c.target_id === component.id) : []}
+              onAddComment={handleAddComment}
                 />
               ))}
           </div>
