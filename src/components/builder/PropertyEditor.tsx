@@ -287,9 +287,14 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
 
   // Sync local help text when component changes
   React.useEffect(() => {
+    // When no component is selected yet, just show the default text
+    if (!component) {
+      setHelpTextValue(defaultHelp);
+      return;
+    }
     // If there is custom help text, use it; otherwise start from the default text
     setHelpTextValue(component.helpText ?? defaultHelp);
-  }, [component.id, component.helpText, defaultHelp]);
+  }, [component, defaultHelp]);
 
   const handleFieldChange = (key: string, value: unknown) => {
     onUpdateProps({ [key]: value });
