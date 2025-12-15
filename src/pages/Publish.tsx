@@ -8,14 +8,28 @@ import { getHelpText } from '../utils/componentHelp';
 import { getComponentMeta } from '../components/builder/componentRegistry';
 import type { Project, PlacedComponent } from '../types/builder';
 
+type CommentRecord = {
+  id: string;
+  project_id: string;
+  page_id: string | null;
+  target_id: string | null;
+  x_pct: number | null;
+  y_pct: number | null;
+  comment_text: string;
+  author_name: string;
+  author_email: string | null;
+  created_at: string;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions';
 
-// Component wrapper with info icon for annotations
+// Component wrapper with info icon for annotations and read-only comment markers
 const AnnotatedComponent: React.FC<{
   component: PlacedComponent;
   showAnnotations: boolean;
   onShowHelp: (component: PlacedComponent) => void;
-}> = ({ component, showAnnotations, onShowHelp }) => {
+  comments?: CommentRecord[];
+}> = ({ component, showAnnotations, onShowHelp, comments = [] }) => {
   const [isHovered, setIsHovered] = useState(false);
   const meta = getComponentMeta(component.type);
 
@@ -37,6 +51,23 @@ const AnnotatedComponent: React.FC<{
           i
         </button>
       )}
+
+      {/* Comment markers (read-only) */}
+      {comments.map((c) => {
+        if (c.x_pct == null || c.y_pct == null) return null;
+        return (
+          <div
+            key={c.id}
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${c.x_pct * 100}%`, top: `${c.y_pct * 100}%` }}
+            title={`${c.author_name}: ${c.comment_text}`}
+          >
+            <div className="w-8 h-8 rounded-full bg-wire-700 text-white text-sm font-bold flex items-center justify-center shadow">
+              {c.author_name?.[0]?.toUpperCase() || '?'}
+            </div>
+          </div>
+        );
+      })}
 
     </div>
   );
@@ -98,6 +129,7 @@ const HelpPopup: React.FC<{
 export const Publish: React.FC = () => {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
   const [project, setProject] = useState<Project & { clientName?: string } | null>(null);
+  const [comments, setComments] = useState<CommentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(true);
@@ -159,6 +191,28 @@ export const Publish: React.FC = () => {
   
   // If no pageId specified, show welcome page
   const showWelcomePage = !pageId;
+  
+  // Load comments (read-only) for this project/page
+  useEffect(() => {
+    let isMounted = true;
+    const fetchComments = async () => {
+      if (!projectId) return;
+      try {
+        const qs = new URLSearchParams({ projectId });
+        if (pageId) qs.set('pageId', pageId);
+        const res = await fetch(`${API_BASE_URL}/comments?${qs.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isMounted) setComments(data || []);
+      } catch (err) {
+        console.error('Error fetching comments', err);
+      }
+    };
+    fetchComments();
+    return () => {
+      isMounted = false;
+    };
+  }, [projectId, pageId]);
   
   // Derive current page directly (no extra state/effect)
   const currentPage = pageId
@@ -271,6 +325,7 @@ export const Publish: React.FC = () => {
                   component={component}
                   showAnnotations={showAnnotations}
                   onShowHelp={setActiveHelpComponent}
+                  comments={comments.filter((c) => c.target_id === component.id)}
                 />
               ))}
           </div>
