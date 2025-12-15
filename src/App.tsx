@@ -21,7 +21,7 @@ function AppContent() {
   useEffect(() => {
     // Only initialize if user is authenticated and not on login page
     const initIfAuthenticated = async () => {
-      if (location.pathname === '/login') {
+      if (location.pathname === '/login' || location.pathname.startsWith('/publish')) {
         return; // Don't initialize on login page
       }
       
