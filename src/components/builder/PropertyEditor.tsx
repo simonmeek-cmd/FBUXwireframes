@@ -267,6 +267,10 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
 }) => {
   const [showHelpText, setShowHelpText] = useState(false);
 
+  // Local state for help text so typing stays fast and smooth
+  const [helpTextValue, setHelpTextValue] = useState<string>('');
+  const saveHelpTextTimeoutRef = React.useRef<number | null>(null);
+
   if (!component) {
     return (
       <div className="w-72 bg-wire-100 border-l border-wire-300 p-4">
@@ -281,8 +285,27 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
   const schema = getComponentSchema(component.type);
   const defaultHelp = defaultHelpText[component.type] || '';
 
+  // Sync local help text when component changes
+  React.useEffect(() => {
+    // If there is custom help text, use it; otherwise start from the default text
+    setHelpTextValue(component.helpText ?? defaultHelp);
+  }, [component.id, component.helpText, defaultHelp]);
+
   const handleFieldChange = (key: string, value: unknown) => {
     onUpdateProps({ [key]: value });
+  };
+
+  const handleHelpTextChange = (next: string) => {
+    setHelpTextValue(next);
+    if (!onUpdateHelpText) return;
+
+    // Debounce saves so we don't hit the API on every keystroke
+    if (saveHelpTextTimeoutRef.current) {
+      window.clearTimeout(saveHelpTextTimeoutRef.current);
+    }
+    saveHelpTextTimeoutRef.current = window.setTimeout(() => {
+      onUpdateHelpText(next);
+    }, 400);
   };
 
   // Check if any field is a richtext field (needs more width)
@@ -356,15 +379,14 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
                 This text appears when users click the info icon in preview mode. Customise it to explain this component's purpose for your client.
               </p>
               <textarea
-                value={component.helpText || ''}
-                onChange={(e) => onUpdateHelpText(e.target.value)}
-                placeholder={defaultHelp}
+                value={helpTextValue}
+                onChange={(e) => handleHelpTextChange(e.target.value)}
                 rows={5}
                 className="w-full px-3 py-2 text-sm bg-wire-50 border border-wire-300 rounded resize-none focus:outline-none focus:border-wire-500"
               />
-              {component.helpText && (
+              {helpTextValue !== defaultHelp && (
                 <button
-                  onClick={() => onUpdateHelpText('')}
+                  onClick={() => handleHelpTextChange(defaultHelp)}
                   className="text-xs text-wire-500 hover:text-wire-700 underline"
                 >
                   Reset to default
