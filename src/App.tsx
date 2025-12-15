@@ -48,7 +48,7 @@ const PublishDiag: React.FC = () => (
 );
 
 function App() {
-  const PUBLISH_ROUTE_DIAG = true; // set false to restore normal publish routes
+  const PUBLISH_ROUTE_DIAG = false; // set true to force publish diagnostic screen
   return (
     <BrowserRouter>
       <AppContent />

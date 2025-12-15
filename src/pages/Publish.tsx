@@ -25,8 +25,11 @@ type CommentRecord = {
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions';
-// Diagnostic flag: when true, render a minimal view to isolate loops
-const PUBLISH_DIAG = true;
+// Diagnostic flags to isolate render loop – adjust one at a time
+const PUBLISH_DIAG = false; // when true, bypasses publish rendering
+const SHOW_NAV = true;      // render site navigation
+const SHOW_CONTENT = false; // render page components
+const SHOW_FOOTER = false;  // render site footer
 
 // Component wrapper with info icon for annotations
 const AnnotatedComponent: React.FC<{
@@ -380,7 +383,7 @@ export const Publish: React.FC = () => {
       {/* Page content */}
       <div className="max-w-6xl mx-auto bg-white min-h-screen shadow-lg">
         {/* Site Navigation */}
-        {project.navigationConfig && (
+        {SHOW_NAV && project.navigationConfig && (
           <SiteNavigation 
             config={project.navigationConfig} 
             onNavigate={(href) => {
@@ -404,28 +407,32 @@ export const Publish: React.FC = () => {
           />
         )}
 
-        {currentPage.components.length === 0 ? (
-          <div className="flex items-center justify-center h-96 text-wire-400">
-            <div className="text-center">
-              <p className="text-lg mb-2">This page is empty</p>
+        {SHOW_CONTENT ? (
+          currentPage.components.length === 0 ? (
+            <div className="flex items-center justify-center h-96 text-wire-400">
+              <div className="text-center">
+                <p className="text-lg mb-2">This page is empty</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              {currentPage.components
+                .sort((a, b) => a.order - b.order)
+                .map((component) => (
+                  <AnnotatedComponent
+                    key={component.id}
+                    component={component}
+                    showAnnotations={showAnnotations}
+                    onShowHelp={setActiveHelpComponent}
+                    commentMode={COMMENTS_ENABLED ? commentMode : false}
+                    comments={COMMENTS_ENABLED ? pageComments.filter((c) => c.target_id === component.id) : []}
+                    onAddComment={handleAddComment}
+                  />
+                ))}
+            </div>
+          )
         ) : (
-          <div>
-            {currentPage.components
-              .sort((a, b) => a.order - b.order)
-              .map((component) => (
-                <AnnotatedComponent
-                  key={component.id}
-                  component={component}
-                  showAnnotations={showAnnotations}
-                  onShowHelp={setActiveHelpComponent}
-              commentMode={COMMENTS_ENABLED ? commentMode : false}
-              comments={COMMENTS_ENABLED ? pageComments.filter((c) => c.target_id === component.id) : []}
-              onAddComment={handleAddComment}
-                />
-              ))}
-          </div>
+          <div className="p-8 text-center text-wire-500 text-sm">Content disabled (diagnostic)</div>
         )}
 
         {/* Help text popup */}
@@ -435,7 +442,7 @@ export const Publish: React.FC = () => {
         />
 
         {/* Site Footer */}
-        {project.footerConfig && (
+        {SHOW_FOOTER && project.footerConfig && (
           <SiteFooter 
             config={project.footerConfig}
             onNavigate={(href) => {
