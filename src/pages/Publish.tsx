@@ -207,21 +207,24 @@ export const Publish: React.FC = () => {
   
   // Load comments for this project/page
   useEffect(() => {
+    let isMounted = true;
     const fetchComments = async () => {
       if (!projectId) return;
       try {
-        const url = new URL(`${API_BASE_URL}/comments`, window.location.origin);
-        url.searchParams.set('projectId', projectId);
-        if (pageId) url.searchParams.set('pageId', pageId);
-        const res = await fetch(url.toString());
+        const qs = new URLSearchParams({ projectId });
+        if (pageId) qs.set('pageId', pageId);
+        const res = await fetch(`${API_BASE_URL}/comments?${qs.toString()}`);
         if (!res.ok) return;
         const data = await res.json();
-        setComments(data || []);
+        if (isMounted) setComments(data || []);
       } catch (err) {
         console.error('Error fetching comments', err);
       }
     };
     fetchComments();
+    return () => {
+      isMounted = false;
+    };
   }, [projectId, pageId]);
   
   // Derive current page directly (no extra state/effect)
