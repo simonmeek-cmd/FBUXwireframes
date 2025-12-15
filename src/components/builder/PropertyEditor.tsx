@@ -267,7 +267,6 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
 }) => {
   const [showHelpText, setShowHelpText] = useState(false);
 
-  // If nothing is selected, show a simple placeholder panel
   if (!component) {
     return (
       <div className="w-72 bg-wire-100 border-l border-wire-300 p-4">
@@ -282,55 +281,15 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
   const schema = getComponentSchema(component.type);
   const defaultHelp = defaultHelpText[component.type] || '';
 
-  // Local state for props so typing is instant; we debounce saves to the store/API
-  const [localProps, setLocalProps] = useState<Record<string, unknown>>(
-    () => ({ ...component.props })
-  );
-  const propsSaveTimeoutRef = React.useRef<number | null>(null);
-
-  // Local state for help text so typing stays fast and smooth
-  const [helpTextValue, setHelpTextValue] = useState<string>(
-    () => component.helpText ?? defaultHelp
-  );
-  const helpSaveTimeoutRef = React.useRef<number | null>(null);
-
-  // When the selected component changes, reset local state from it
-  React.useEffect(() => {
-    setLocalProps({ ...component.props });
-    setHelpTextValue(component.helpText ?? defaultHelp);
-  }, [component.id, component.helpText, defaultHelp]);
-
   const handleFieldChange = (key: string, value: unknown) => {
-    const nextProps = { ...localProps, [key]: value };
-    setLocalProps(nextProps);
-
-    // Debounce saving props to the store/API
-    if (propsSaveTimeoutRef.current) {
-      window.clearTimeout(propsSaveTimeoutRef.current);
-    }
-    propsSaveTimeoutRef.current = window.setTimeout(() => {
-      onUpdateProps(nextProps);
-    }, 300);
-  };
-
-  const handleHelpTextChange = (next: string) => {
-    setHelpTextValue(next);
-    if (!onUpdateHelpText) return;
-
-    // Debounce saves so we don't hit the API on every keystroke
-    if (helpSaveTimeoutRef.current) {
-      window.clearTimeout(helpSaveTimeoutRef.current);
-    }
-    helpSaveTimeoutRef.current = window.setTimeout(() => {
-      onUpdateHelpText(next);
-    }, 400);
+    onUpdateProps({ [key]: value });
   };
 
   // Check if any field is a richtext field (needs more width)
   const hasRichText = schema?.fields.some((f) => f.type === 'richtext');
 
   return (
-    <div className={`${hasRichText ? 'w-96' : 'w-72'} bg-wire-100 border-l border-wire-300 overflow-y-auto h_full`}>
+    <div className={`${hasRichText ? "w-96" : "w-72"} bg-wire-100 border-l border-wire-300 overflow-y-auto h-full`}>
       {/* Header */}
       <div className="p-4 border-b border-wire-300 bg-wire-200 flex items-center justify-between">
         <div>
@@ -355,7 +314,7 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
             </label>
             <FieldRenderer
               field={field}
-              value={localProps[field.key]}
+              value={component.props[field.key]}
               onChange={(value) => handleFieldChange(field.key, value)}
             />
           </div>
@@ -397,14 +356,14 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
                 This text appears when users click the info icon in preview mode. Customise it to explain this component's purpose for your client.
               </p>
               <textarea
-                value={helpTextValue}
-                onChange={(e) => handleHelpTextChange(e.target.value)}
+                value={component.helpText ?? defaultHelp}
+                onChange={(e) => onUpdateHelpText && onUpdateHelpText(e.target.value)}
                 rows={5}
                 className="w-full px-3 py-2 text-sm bg-wire-50 border border-wire-300 rounded resize-none focus:outline-none focus:border-wire-500"
               />
-              {helpTextValue !== defaultHelp && (
+              {component.helpText && onUpdateHelpText && (
                 <button
-                  onClick={() => handleHelpTextChange(defaultHelp)}
+                  onClick={() => onUpdateHelpText(defaultHelp)}
                   className="text-xs text-wire-500 hover:text-wire-700 underline"
                 >
                   Reset to default
