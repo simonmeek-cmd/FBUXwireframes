@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import type { PlacedComponent } from '../../types/builder';
 import { getComponentMeta } from './componentRegistry';
 import { getComponentSchema, PropertyField } from './componentSchemas';
@@ -266,6 +266,66 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
   onClose,
 }) => {
   const [showHelpText, setShowHelpText] = useState(false);
+  // Local state for props - allows instant typing
+  const [localProps, setLocalProps] = useState<Record<string, unknown>>({});
+  const [localHelpText, setLocalHelpText] = useState<string>('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const helpTextTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const componentIdRef = useRef<string | undefined>(undefined);
+
+  // Sync local props when component changes (by ID, not props to avoid loops)
+  useEffect(() => {
+    if (component && component.id !== componentIdRef.current) {
+      componentIdRef.current = component.id;
+      setLocalProps({ ...component.props });
+      const defaultHelp = defaultHelpText[component.type] || '';
+      setLocalHelpText(component.helpText ?? defaultHelp);
+    }
+  }, [component?.id, component?.type]);
+
+  // Debounced save function
+  const debouncedUpdate = useCallback((key: string, value: unknown) => {
+    // Update local state immediately for instant UI feedback
+    setLocalProps(prev => ({ ...prev, [key]: value }));
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer to save after 300ms of no typing
+    debounceTimerRef.current = setTimeout(() => {
+      onUpdateProps({ [key]: value });
+    }, 300);
+  }, [onUpdateProps]);
+
+  // Debounced help text update
+  const debouncedHelpTextUpdate = useCallback((text: string) => {
+    // Update local state immediately
+    setLocalHelpText(text);
+
+    // Clear existing timer
+    if (helpTextTimerRef.current) {
+      clearTimeout(helpTextTimerRef.current);
+    }
+
+    // Set new timer to save after 300ms of no typing
+    helpTextTimerRef.current = setTimeout(() => {
+      onUpdateHelpText?.(text);
+    }, 300);
+  }, [onUpdateHelpText]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (helpTextTimerRef.current) {
+        clearTimeout(helpTextTimerRef.current);
+      }
+    };
+  }, []);
 
   if (!component) {
     return (
@@ -282,7 +342,7 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
   const defaultHelp = defaultHelpText[component.type] || '';
 
   const handleFieldChange = (key: string, value: unknown) => {
-    onUpdateProps({ [key]: value });
+    debouncedUpdate(key, value);
   };
 
   // Check if any field is a richtext field (needs more width)
@@ -314,7 +374,7 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
             </label>
             <FieldRenderer
               field={field}
-              value={component.props[field.key]}
+              value={localProps[field.key] ?? component.props[field.key]}
               onChange={(value) => handleFieldChange(field.key, value)}
             />
           </div>
@@ -356,14 +416,17 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
                 This text appears when users click the info icon in preview mode. Customise it to explain this component's purpose for your client.
               </p>
               <textarea
-                value={component.helpText ?? defaultHelp}
-                onChange={(e) => onUpdateHelpText && onUpdateHelpText(e.target.value)}
+                value={localHelpText}
+                onChange={(e) => debouncedHelpTextUpdate(e.target.value)}
                 rows={5}
                 className="w-full px-3 py-2 text-sm bg-wire-50 border border-wire-300 rounded resize-none focus:outline-none focus:border-wire-500"
               />
-              {component.helpText && onUpdateHelpText && (
+              {localHelpText !== defaultHelp && onUpdateHelpText && (
                 <button
-                  onClick={() => onUpdateHelpText(defaultHelp)}
+                  onClick={() => {
+                    setLocalHelpText(defaultHelp);
+                    onUpdateHelpText(defaultHelp);
+                  }}
                   className="text-xs text-wire-500 hover:text-wire-700 underline"
                 >
                   Reset to default
