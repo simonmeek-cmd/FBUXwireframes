@@ -267,10 +267,7 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
 }) => {
   const [showHelpText, setShowHelpText] = useState(false);
 
-  // Local state for help text so typing stays fast and smooth
-  const [helpTextValue, setHelpTextValue] = useState<string>('');
-  const saveHelpTextTimeoutRef = React.useRef<number | null>(null);
-
+  // If nothing is selected, show a simple placeholder panel
   if (!component) {
     return (
       <div className="w-72 bg-wire-100 border-l border-wire-300 p-4">
@@ -285,19 +282,35 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
   const schema = getComponentSchema(component.type);
   const defaultHelp = defaultHelpText[component.type] || '';
 
-  // Sync local help text when component changes
+  // Local state for props so typing is instant; we debounce saves to the store/API
+  const [localProps, setLocalProps] = useState<Record<string, unknown>>(
+    () => ({ ...component.props })
+  );
+  const propsSaveTimeoutRef = React.useRef<number | null>(null);
+
+  // Local state for help text so typing stays fast and smooth
+  const [helpTextValue, setHelpTextValue] = useState<string>(
+    () => component.helpText ?? defaultHelp
+  );
+  const helpSaveTimeoutRef = React.useRef<number | null>(null);
+
+  // When the selected component changes, reset local state from it
   React.useEffect(() => {
-    // When no component is selected yet, just show the default text
-    if (!component) {
-      setHelpTextValue(defaultHelp);
-      return;
-    }
-    // If there is custom help text, use it; otherwise start from the default text
+    setLocalProps({ ...component.props });
     setHelpTextValue(component.helpText ?? defaultHelp);
-  }, [component, defaultHelp]);
+  }, [component.id, component.helpText, defaultHelp]);
 
   const handleFieldChange = (key: string, value: unknown) => {
-    onUpdateProps({ [key]: value });
+    const nextProps = { ...localProps, [key]: value };
+    setLocalProps(nextProps);
+
+    // Debounce saving props to the store/API
+    if (propsSaveTimeoutRef.current) {
+      window.clearTimeout(propsSaveTimeoutRef.current);
+    }
+    propsSaveTimeoutRef.current = window.setTimeout(() => {
+      onUpdateProps(nextProps);
+    }, 300);
   };
 
   const handleHelpTextChange = (next: string) => {
@@ -305,19 +318,19 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
     if (!onUpdateHelpText) return;
 
     // Debounce saves so we don't hit the API on every keystroke
-    if (saveHelpTextTimeoutRef.current) {
-      window.clearTimeout(saveHelpTextTimeoutRef.current);
+    if (helpSaveTimeoutRef.current) {
+      window.clearTimeout(helpSaveTimeoutRef.current);
     }
-    saveHelpTextTimeoutRef.current = window.setTimeout(() => {
+    helpSaveTimeoutRef.current = window.setTimeout(() => {
       onUpdateHelpText(next);
     }, 400);
   };
 
   // Check if any field is a richtext field (needs more width)
-  const hasRichText = schema?.fields.some(f => f.type === 'richtext');
+  const hasRichText = schema?.fields.some((f) => f.type === 'richtext');
 
   return (
-    <div className={`${hasRichText ? 'w-96' : 'w-72'} bg-wire-100 border-l border-wire-300 overflow-y-auto h-full`}>
+    <div className={`${hasRichText ? 'w-96' : 'w-72'} bg-wire-100 border-l border-wire-300 overflow-y-auto h_full`}>
       {/* Header */}
       <div className="p-4 border-b border-wire-300 bg-wire-200 flex items-center justify-between">
         <div>
@@ -342,7 +355,7 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
             </label>
             <FieldRenderer
               field={field}
-              value={component.props[field.key]}
+              value={localProps[field.key]}
               onChange={(value) => handleFieldChange(field.key, value)}
             />
           </div>
