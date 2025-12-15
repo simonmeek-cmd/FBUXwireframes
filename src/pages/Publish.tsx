@@ -204,29 +204,49 @@ export const Publish: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-wire-50">
-      {/* Page navigation tabs */}
-      {pages.length > 1 && (
-        <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-40">
-          <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto">
-            {pages.map((page, index) => {
-              const isActive = pageId ? page.id === pageId : index === currentPageIndex;
-              return (
-                <button
-                  key={page.id}
-                  onClick={() => goToPage(index)}
-                  className={`px-3 py-1.5 text-sm rounded whitespace-nowrap transition-colors ${
-                    isActive
-                      ? 'bg-wire-600 text-white'
-                      : 'bg-wire-100 text-wire-700 hover:bg-wire-300'
-                  }`}
-                >
-                  {page.name}
-                </button>
-              );
-            })}
-          </div>
+      {/* Page navigation tabs + Home icon */}
+      <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto items-center">
+          {/* Home icon tab */}
+          <button
+            onClick={() => {
+              // Go back to welcome screen
+              window.location.href = `/publish/${projectId}`;
+            }}
+            className={`flex items-center justify-center w-8 h-8 rounded-full border text-xs font-bold transition-colors ${
+              !pageId
+                ? 'bg-wire-600 text-white border-wire-600'
+                : 'bg-wire-50 text-wire-700 border-wire-400 hover:bg-wire-300'
+            }`}
+            title="Back to welcome page"
+          >
+            🏠
+          </button>
+
+          {/* Page tabs */}
+          {pages.length > 1 && (
+            <>
+              <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
+              {pages.map((page, index) => {
+                const isActive = pageId ? page.id === pageId : index === currentPageIndex;
+                return (
+                  <button
+                    key={page.id}
+                    onClick={() => goToPage(index)}
+                    className={`px-3 py-1.5 text-sm rounded whitespace-nowrap transition-colors ${
+                      isActive
+                        ? 'bg-wire-600 text-white'
+                        : 'bg-wire-100 text-wire-700 hover:bg-wire-300'
+                    }`}
+                  >
+                    {page.name}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Page content */}
       <div className="max-w-6xl mx-auto bg-white min-h-screen shadow-lg">
