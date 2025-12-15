@@ -27,7 +27,8 @@ type CommentRecord = {
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions';
 // Diagnostic flags to isolate render loop – adjust one at a time
 const PUBLISH_DIAG = false; // when true, bypasses publish rendering
-const SHOW_NAV = true;      // render site navigation
+const SHOW_NAV = false;     // render site navigation
+const SHOW_TABS = false;    // render page tabs
 const SHOW_CONTENT = false; // render page components
 const SHOW_FOOTER = false;  // render site footer
 
@@ -357,7 +358,7 @@ export const Publish: React.FC = () => {
       )}
 
       {/* Page navigation tabs */}
-      {pages.length > 1 && (
+      {SHOW_TABS && pages.length > 1 && (
         <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-40">
           <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto">
             {pages.map((page, index) => {
