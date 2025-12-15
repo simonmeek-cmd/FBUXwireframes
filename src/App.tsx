@@ -37,15 +37,26 @@ function AppContent() {
   return null; // This component just handles initialization
 }
 
+// Temporary publish diagnostic component (no hooks)
+const PublishDiag: React.FC = () => (
+  <div className="min-h-screen bg-wire-50 flex items-center justify-center">
+    <div className="text-center space-y-2">
+      <p className="text-wire-700 font-semibold">Publish diagnostic route</p>
+      <p className="text-wire-500 text-sm">Rendering is temporarily replaced to isolate a render loop.</p>
+    </div>
+  </div>
+);
+
 function App() {
+  const PUBLISH_ROUTE_DIAG = true; // set false to restore normal publish routes
   return (
     <BrowserRouter>
       <AppContent />
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/publish/:projectId" element={<Publish />} />
-        <Route path="/publish/:projectId/:pageId" element={<Publish />} />
+        <Route path="/publish/:projectId" element={PUBLISH_ROUTE_DIAG ? <PublishDiag /> : <Publish />} />
+        <Route path="/publish/:projectId/:pageId" element={PUBLISH_ROUTE_DIAG ? <PublishDiag /> : <Publish />} />
         
         {/* Migration tool (protected) */}
         <Route
