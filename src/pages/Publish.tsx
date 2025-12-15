@@ -25,6 +25,8 @@ type CommentRecord = {
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions';
+// Diagnostic flag: when true, render a minimal view to isolate loops
+const PUBLISH_DIAG = true;
 
 // Component wrapper with info icon for annotations
 const AnnotatedComponent: React.FC<{
@@ -289,6 +291,16 @@ export const Publish: React.FC = () => {
 
   // Show welcome page if no pageId or if explicitly showing welcome
   if (showWelcomePage) {
+    if (PUBLISH_DIAG) {
+      return (
+        <div className="min-h-screen bg-wire-50 flex items-center justify-center">
+          <div className="text-center space-y-2">
+            <p className="text-wire-700 font-semibold">Publish diagnostic mode</p>
+            <p className="text-wire-500 text-sm">Welcome page view is temporarily disabled while isolating a render loop.</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <WelcomePage
         config={project.welcomePageConfig}
@@ -304,6 +316,17 @@ export const Publish: React.FC = () => {
 
   if (!currentPage) {
     return <Navigate to={`/publish/${projectId}`} replace />;
+  }
+
+  if (PUBLISH_DIAG) {
+    return (
+      <div className="min-h-screen bg-wire-50 flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <p className="text-wire-700 font-semibold">Publish diagnostic mode</p>
+          <p className="text-wire-500 text-sm">Page rendering temporarily disabled while isolating a render loop.</p>
+        </div>
+      </div>
+    );
   }
 
   const goToPage = (index: number) => {
