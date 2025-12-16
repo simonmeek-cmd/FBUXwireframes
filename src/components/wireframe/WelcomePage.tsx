@@ -62,9 +62,16 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
           margin-bottom: 1rem;
           padding-left: 1.5rem;
         }
+        .welcome-intro ul {
+          list-style: disc;
+        }
+        .welcome-intro ol {
+          list-style: decimal;
+        }
         .welcome-intro li {
           margin-top: 0.5rem;
           margin-bottom: 0.5rem;
+          display: list-item;
         }
         .welcome-intro strong {
           font-weight: 600;
