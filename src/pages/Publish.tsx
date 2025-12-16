@@ -157,14 +157,23 @@ export const Publish: React.FC = () => {
 
   const pages = project.pages || [];
   
+  // Sort pages: homepage first, then alphabetically
+  const sortedPages = [...pages].sort((a, b) => {
+    // Homepage always first
+    if (a.type === 'homepage' && b.type !== 'homepage') return -1;
+    if (a.type !== 'homepage' && b.type === 'homepage') return 1;
+    // Then alphabetical by name
+    return a.name.localeCompare(b.name);
+  });
+  
   // If no pageId specified, show welcome page
   const showWelcomePage = !pageId;
   
   // Derive current page directly (no extra state/effect)
   const currentPage = pageId
-    ? pages.find((p) => p.id === pageId) || pages[0]
-    : pages[0];
-  const currentPageIndex = currentPage ? pages.findIndex((p) => p.id === currentPage.id) : 0;
+    ? sortedPages.find((p) => p.id === pageId) || sortedPages[0]
+    : sortedPages[0];
+  const currentPageIndex = currentPage ? sortedPages.findIndex((p) => p.id === currentPage.id) : 0;
 
   if (pages.length === 0) {
     return (
@@ -183,7 +192,7 @@ export const Publish: React.FC = () => {
         config={project.welcomePageConfig}
         projectName={project.name}
         clientName={project.clientName || 'Client'}
-        pages={pages}
+        pages={sortedPages}
         onNavigateToPage={(pageId) => {
           window.location.href = `/publish/${projectId}/${pageId}`;
         }}
@@ -199,9 +208,9 @@ export const Publish: React.FC = () => {
   }
 
   const goToPage = (index: number) => {
-    if (index >= 0 && index < pages.length) {
+    if (index >= 0 && index < sortedPages.length) {
       // Navigate to the page using the page ID
-      window.location.href = `/publish/${projectId}/${pages[index].id}`;
+      window.location.href = `/publish/${projectId}/${sortedPages[index].id}`;
     }
   };
 
@@ -239,10 +248,10 @@ export const Publish: React.FC = () => {
           </button>
 
           {/* Page tabs */}
-          {pages.length > 1 && (
+          {sortedPages.length > 1 && (
             <>
               <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
-              {pages.map((page, index) => {
+              {sortedPages.map((page, index) => {
                 const isActive = pageId ? page.id === pageId : index === currentPageIndex;
                 return (
                   <button
@@ -276,12 +285,12 @@ export const Publish: React.FC = () => {
                 return;
               }
               // Find page by name and navigate
-              const targetPage = pages.find(p => 
+              const targetPage = sortedPages.find(p => 
                 p.name.toLowerCase() === href.replace(/^\//, '').toLowerCase() ||
                 p.name.toLowerCase().replace(/\s+/g, '-') === href.replace(/^\//, '').toLowerCase()
               );
               if (targetPage) {
-                const targetIndex = pages.findIndex(p => p.id === targetPage.id);
+                const targetIndex = sortedPages.findIndex(p => p.id === targetPage.id);
                 if (targetIndex !== -1) {
                   goToPage(targetIndex);
                 }
@@ -322,12 +331,12 @@ export const Publish: React.FC = () => {
           <SiteFooter 
             config={project.footerConfig}
             onNavigate={(href) => {
-              const targetPage = pages.find(p => 
+              const targetPage = sortedPages.find(p => 
                 p.name.toLowerCase() === href.replace(/^\//, '').toLowerCase() ||
                 p.name.toLowerCase().replace(/\s+/g, '-') === href.replace(/^\//, '').toLowerCase()
               );
               if (targetPage) {
-                const targetIndex = pages.findIndex(p => p.id === targetPage.id);
+                const targetIndex = sortedPages.findIndex(p => p.id === targetPage.id);
                 if (targetIndex !== -1) {
                   goToPage(targetIndex);
                 }

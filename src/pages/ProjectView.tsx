@@ -124,6 +124,15 @@ export const ProjectView: React.FC = () => {
     return PAGE_TYPES.find((t) => t.value === type)?.label || type;
   };
 
+  // Sort pages: homepage first, then alphabetically
+  const sortedPages = [...project.pages].sort((a, b) => {
+    // Homepage always first
+    if (a.type === 'homepage' && b.type !== 'homepage') return -1;
+    if (a.type !== 'homepage' && b.type === 'homepage') return 1;
+    // Then alphabetical by name
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <div className="min-h-screen bg-wire-100">
       {/* Header */}
@@ -441,7 +450,7 @@ export const ProjectView: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {project.pages.map((page) => (
+            {sortedPages.map((page) => (
               <div
                 key={page.id}
                 className="flex items-center justify-between p-4 bg-wire-50 border border-wire-200 rounded hover:bg-wire-100 transition-colors"

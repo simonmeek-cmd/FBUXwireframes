@@ -120,9 +120,19 @@ export const Preview: React.FC = () => {
 
   // If pageId is provided, show that specific page; otherwise show navigation between all pages
   const pages = project.pages;
+  
+  // Sort pages: homepage first, then alphabetically
+  const sortedPages = [...pages].sort((a, b) => {
+    // Homepage always first
+    if (a.type === 'homepage' && b.type !== 'homepage') return -1;
+    if (a.type !== 'homepage' && b.type === 'homepage') return 1;
+    // Then alphabetical by name
+    return a.name.localeCompare(b.name);
+  });
+  
   const currentPage = pageId
-    ? pages.find((p) => p.id === pageId)
-    : pages[currentPageIndex];
+    ? sortedPages.find((p) => p.id === pageId)
+    : sortedPages[currentPageIndex];
 
   if (pages.length === 0) {
     return (
@@ -168,7 +178,7 @@ export const Preview: React.FC = () => {
   };
 
   const goToPage = (index: number) => {
-    if (index >= 0 && index < pages.length) {
+    if (index >= 0 && index < sortedPages.length) {
       setCurrentPageIndex(index);
     }
   };
@@ -210,7 +220,7 @@ export const Preview: React.FC = () => {
           </button>
 
           {/* Page navigation (when viewing all pages) */}
-          {!pageId && pages.length > 1 && (
+          {!pageId && sortedPages.length > 1 && (
             <div className="flex items-center gap-2 ml-2">
               <button
                 onClick={() => goToPage(currentPageIndex - 1)}
@@ -220,11 +230,11 @@ export const Preview: React.FC = () => {
                 ← Prev
               </button>
               <span className="text-sm text-wire-400">
-                {currentPageIndex + 1} / {pages.length}
+                {currentPageIndex + 1} / {sortedPages.length}
               </span>
               <button
                 onClick={() => goToPage(currentPageIndex + 1)}
-                disabled={currentPageIndex === pages.length - 1}
+                disabled={currentPageIndex === sortedPages.length - 1}
                 className="px-2 py-1 text-wire-400 hover:text-wire-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next →
@@ -251,9 +261,9 @@ export const Preview: React.FC = () => {
       </header>
 
       {/* Page navigation tabs (when viewing all pages) */}
-      {!pageId && pages.length > 1 && (
+      {!pageId && sortedPages.length > 1 && (
         <div className="bg-wire-700 px-4 py-2 flex gap-2 overflow-x-auto">
-          {pages.map((page, index) => (
+          {sortedPages.map((page, index) => (
             <button
               key={page.id}
               onClick={() => setCurrentPageIndex(index)}
@@ -286,12 +296,12 @@ export const Preview: React.FC = () => {
                   return;
                 }
                 // Find page by name and navigate
-                const targetPage = pages.find(p => 
+                const targetPage = sortedPages.find(p => 
                   p.name.toLowerCase() === href.replace(/^\//, '').toLowerCase() ||
                   p.name.toLowerCase().replace(/\s+/g, '-') === href.replace(/^\//, '').toLowerCase()
                 );
                 if (targetPage) {
-                  const targetIndex = pages.findIndex(p => p.id === targetPage.id);
+                  const targetIndex = sortedPages.findIndex(p => p.id === targetPage.id);
                   if (targetIndex !== -1) {
                     setCurrentPageIndex(targetIndex);
                   }
@@ -332,12 +342,12 @@ export const Preview: React.FC = () => {
             <SiteFooter 
               config={project.footerConfig}
               onNavigate={(href) => {
-                const targetPage = pages.find(p => 
+                const targetPage = sortedPages.find(p => 
                   p.name.toLowerCase() === href.replace(/^\//, '').toLowerCase() ||
                   p.name.toLowerCase().replace(/\s+/g, '-') === href.replace(/^\//, '').toLowerCase()
                 );
                 if (targetPage) {
-                  const targetIndex = pages.findIndex(p => p.id === targetPage.id);
+                  const targetIndex = sortedPages.findIndex(p => p.id === targetPage.id);
                   if (targetIndex !== -1) {
                     setCurrentPageIndex(targetIndex);
                   }
