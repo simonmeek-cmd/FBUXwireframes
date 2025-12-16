@@ -360,48 +360,6 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
     return items.length > 0 ? items : undefined;
   };
 
-  // Helper to convert items array to flat fields for FeaturedPromosTitlesOnly
-  const titlesOnlyItemsToFlatFields = (items: unknown[] | undefined): Record<string, unknown> => {
-    const flat: Record<string, unknown> = {};
-    // Default items from FeaturedPromosTitlesOnly component
-    const defaultItems = [
-      { id: '1', title: 'Featured promos, titles and first only (inline)', hasImage: true },
-      { id: '2', title: 'Featured promos, titles and first only (inline)', hasImage: true },
-      { id: '3', title: 'Featured promos, titles and first only (inline)', hasImage: true },
-    ];
-    
-    const itemsToUse = Array.isArray(items) && items.length > 0 ? items : defaultItems;
-    
-    itemsToUse.forEach((item: any, index: number) => {
-      if (index < 3) {
-        flat[`item${index}Title`] = item?.title || '';
-        flat[`item${index}Subtitle`] = item?.subtitle || '';
-        flat[`item${index}Meta`] = item?.meta || '';
-      }
-    });
-    
-    return flat;
-  };
-
-  // Helper to convert flat fields back to items array for FeaturedPromosTitlesOnly
-  const titlesOnlyFlatFieldsToItems = (props: Record<string, unknown>): unknown[] | undefined => {
-    const items: any[] = [];
-    for (let i = 0; i < 3; i++) {
-      const title = props[`item${i}Title`] as string;
-      if (title && title.trim()) {
-        items.push({
-          id: String(i + 1),
-          title: title.trim(),
-          subtitle: (props[`item${i}Subtitle`] as string)?.trim() || undefined,
-          meta: (props[`item${i}Meta`] as string)?.trim() || undefined,
-          hasImage: true, // Default to true
-        });
-      }
-    }
-    // Return undefined if no items (component will use defaultItems)
-    return items.length > 0 ? items : undefined;
-  };
-
   // Sync local props when component changes (by ID, not props to avoid loops)
   useEffect(() => {
     if (component && component.id !== componentIdRef.current) {
