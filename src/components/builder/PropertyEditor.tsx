@@ -318,6 +318,90 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
     return items.length > 0 ? items : undefined;
   };
 
+  // Helper to convert items array to flat fields for FeaturedPromosTitlesOnly
+  const titlesOnlyItemsToFlatFields = (items: unknown[] | undefined): Record<string, unknown> => {
+    const flat: Record<string, unknown> = {};
+    // Default items from FeaturedPromosTitlesOnly component
+    const defaultItems = [
+      { id: '1', title: 'Featured promos, titles and first only (inline)', hasImage: true },
+      { id: '2', title: 'Featured promos, titles and first only (inline)', hasImage: true },
+      { id: '3', title: 'Featured promos, titles and first only (inline)', hasImage: true },
+    ];
+    
+    const itemsToUse = Array.isArray(items) && items.length > 0 ? items : defaultItems;
+    
+    itemsToUse.forEach((item: any, index: number) => {
+      if (index < 3) {
+        flat[`item${index}Title`] = item?.title || '';
+        flat[`item${index}Subtitle`] = item?.subtitle || '';
+        flat[`item${index}Meta`] = item?.meta || '';
+      }
+    });
+    
+    return flat;
+  };
+
+  // Helper to convert flat fields back to items array for FeaturedPromosTitlesOnly
+  const titlesOnlyFlatFieldsToItems = (props: Record<string, unknown>): unknown[] | undefined => {
+    const items: any[] = [];
+    for (let i = 0; i < 3; i++) {
+      const title = props[`item${i}Title`] as string;
+      if (title && title.trim()) {
+        items.push({
+          id: String(i + 1),
+          title: title.trim(),
+          subtitle: (props[`item${i}Subtitle`] as string)?.trim() || undefined,
+          meta: (props[`item${i}Meta`] as string)?.trim() || undefined,
+          hasImage: true, // Default to true
+        });
+      }
+    }
+    // Return undefined if no items (component will use defaultItems)
+    return items.length > 0 ? items : undefined;
+  };
+
+  // Helper to convert items array to flat fields for FeaturedPromosTitlesOnly
+  const titlesOnlyItemsToFlatFields = (items: unknown[] | undefined): Record<string, unknown> => {
+    const flat: Record<string, unknown> = {};
+    // Default items from FeaturedPromosTitlesOnly component
+    const defaultItems = [
+      { id: '1', title: 'Featured promos, titles and first only (inline)', hasImage: true },
+      { id: '2', title: 'Featured promos, titles and first only (inline)', hasImage: true },
+      { id: '3', title: 'Featured promos, titles and first only (inline)', hasImage: true },
+    ];
+    
+    const itemsToUse = Array.isArray(items) && items.length > 0 ? items : defaultItems;
+    
+    itemsToUse.forEach((item: any, index: number) => {
+      if (index < 3) {
+        flat[`item${index}Title`] = item?.title || '';
+        flat[`item${index}Subtitle`] = item?.subtitle || '';
+        flat[`item${index}Meta`] = item?.meta || '';
+      }
+    });
+    
+    return flat;
+  };
+
+  // Helper to convert flat fields back to items array for FeaturedPromosTitlesOnly
+  const titlesOnlyFlatFieldsToItems = (props: Record<string, unknown>): unknown[] | undefined => {
+    const items: any[] = [];
+    for (let i = 0; i < 3; i++) {
+      const title = props[`item${i}Title`] as string;
+      if (title && title.trim()) {
+        items.push({
+          id: String(i + 1),
+          title: title.trim(),
+          subtitle: (props[`item${i}Subtitle`] as string)?.trim() || undefined,
+          meta: (props[`item${i}Meta`] as string)?.trim() || undefined,
+          hasImage: true, // Default to true
+        });
+      }
+    }
+    // Return undefined if no items (component will use defaultItems)
+    return items.length > 0 ? items : undefined;
+  };
+
   // Sync local props when component changes (by ID, not props to avoid loops)
   useEffect(() => {
     if (component && component.id !== componentIdRef.current) {
@@ -325,8 +409,15 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
       const props = { ...component.props };
       
       // Convert items array to flat fields for FeaturedPromosInline
-      if (component.type === 'FeaturedPromosInline' && props.items) {
+      if (component.type === 'FeaturedPromosInline') {
         const flatFields = itemsToFlatFields(props.items as unknown[]);
+        delete props.items; // Remove items from props
+        Object.assign(props, flatFields); // Add flat fields
+      }
+      
+      // Convert items array to flat fields for FeaturedPromosTitlesOnly
+      if (component.type === 'FeaturedPromosTitlesOnly') {
+        const flatFields = titlesOnlyItemsToFlatFields(props.items as unknown[]);
         delete props.items; // Remove items from props
         Object.assign(props, flatFields); // Add flat fields
       }
@@ -366,6 +457,21 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
         ['item0Title', 'item0Subtitle', 'item0Meta', 'item0Tag', 
          'item1Title', 'item1Subtitle', 'item1Meta', 'item1Tag',
          'item2Title', 'item2Subtitle', 'item2Meta', 'item2Tag'].forEach(field => {
+          delete propsToSave[field];
+        });
+        onUpdateProps(propsToSave);
+      } else if (component?.type === 'FeaturedPromosTitlesOnly') {
+        // For FeaturedPromosTitlesOnly, convert flat fields back to items array
+        const currentProps = localPropsRef.current;
+        const items = titlesOnlyFlatFieldsToItems(currentProps);
+        const propsToSave: Record<string, unknown> = { ...currentProps };
+        if (items) {
+          propsToSave.items = items;
+        }
+        // Remove flat fields from props to save
+        ['item0Title', 'item0Subtitle', 'item0Meta',
+         'item1Title', 'item1Subtitle', 'item1Meta',
+         'item2Title', 'item2Subtitle', 'item2Meta'].forEach(field => {
           delete propsToSave[field];
         });
         onUpdateProps(propsToSave);

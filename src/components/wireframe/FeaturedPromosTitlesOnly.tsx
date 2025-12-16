@@ -45,7 +45,7 @@ export const FeaturedPromosTitlesOnly: React.FC<FeaturedPromosTitlesOnlyProps> =
   showThumbnails = true,
 }) => {
   return (
-    <div>
+    <div className="max-w-4xl mx-auto px-4 py-6">
       {heading && (
         <h2 className="text-xl font-bold text-wire-800 mb-4">{heading}</h2>
       )}

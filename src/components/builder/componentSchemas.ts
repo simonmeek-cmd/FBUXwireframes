@@ -370,6 +370,18 @@ export const componentSchemas: ComponentSchema[] = [
     fields: [
       { key: 'heading', label: 'Heading', type: 'text', placeholder: 'More stories' },
       { key: 'showThumbnails', label: 'Show Thumbnails', type: 'toggle' },
+      // Promo Item 0
+      { key: 'item0Title', label: 'Item 1 - Title', type: 'text', placeholder: 'Title' },
+      { key: 'item0Subtitle', label: 'Item 1 - Subtitle', type: 'text', placeholder: 'Subtitle (optional)' },
+      { key: 'item0Meta', label: 'Item 1 - Meta', type: 'text', placeholder: 'Meta text (optional)' },
+      // Promo Item 1
+      { key: 'item1Title', label: 'Item 2 - Title', type: 'text', placeholder: 'Title' },
+      { key: 'item1Subtitle', label: 'Item 2 - Subtitle', type: 'text', placeholder: 'Subtitle (optional)' },
+      { key: 'item1Meta', label: 'Item 2 - Meta', type: 'text', placeholder: 'Meta text (optional)' },
+      // Promo Item 2
+      { key: 'item2Title', label: 'Item 3 - Title', type: 'text', placeholder: 'Title' },
+      { key: 'item2Subtitle', label: 'Item 3 - Subtitle', type: 'text', placeholder: 'Subtitle (optional)' },
+      { key: 'item2Meta', label: 'Item 3 - Meta', type: 'text', placeholder: 'Meta text (optional)' },
     ],
   },
   {
