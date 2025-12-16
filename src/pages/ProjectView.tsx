@@ -15,7 +15,9 @@ import type { WelcomePageConfig } from '../types/welcomePage';
 const PAGE_TYPES: { value: PageType; label: string }[] = [
   { value: 'homepage', label: 'Homepage' },
   { value: 'content', label: 'Content Page' },
-  { value: 'listing', label: 'Listing Page' },
+  { value: 'news-listing', label: 'News Listing (with Article)' },
+  { value: 'resources-listing', label: 'Resources Listing (with Resource)' },
+  { value: 'events-listing', label: 'Events Listing (with Event)' },
   { value: 'custom', label: 'Custom' },
 ];
 
