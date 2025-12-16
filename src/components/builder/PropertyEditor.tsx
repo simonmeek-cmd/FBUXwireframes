@@ -268,16 +268,71 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
   const [showHelpText, setShowHelpText] = useState(false);
   // Local state for props - allows instant typing
   const [localProps, setLocalProps] = useState<Record<string, unknown>>({});
+  const localPropsRef = useRef<Record<string, unknown>>({});
   const [localHelpText, setLocalHelpText] = useState<string>('');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const helpTextTimerRef = useRef<NodeJS.Timeout | null>(null);
   const componentIdRef = useRef<string | undefined>(undefined);
 
+  // Helper to convert items array to flat fields for FeaturedPromosInline
+  const itemsToFlatFields = (items: unknown[] | undefined): Record<string, unknown> => {
+    const flat: Record<string, unknown> = {};
+    // Default items from FeaturedPromosInline component
+    const defaultItems = [
+      { id: '1', title: 'Title', subtitle: 'asddjskdddskdsdkskdjsk dskjdskjdskjdjskdjskdjsk', hasImage: true, tag: 'Event' },
+      { id: '2', title: 'Title', subtitle: 'asddjskdddskdsdkskdjsk dskjdskjdskjdjskdjskdjsk', hasImage: true, tag: 'News' },
+      { id: '3', title: 'Title', subtitle: 'asddjskdddskdsdkskdjsk dskjdskjdskjdjskdjskdjsk', hasImage: true, tag: 'Campaign' },
+    ];
+    
+    const itemsToUse = Array.isArray(items) && items.length > 0 ? items : defaultItems;
+    
+    itemsToUse.forEach((item: any, index: number) => {
+      if (index < 3) {
+        flat[`item${index}Title`] = item?.title || '';
+        flat[`item${index}Subtitle`] = item?.subtitle || '';
+        flat[`item${index}Meta`] = item?.meta || '';
+        flat[`item${index}Tag`] = item?.tag || '';
+      }
+    });
+    
+    return flat;
+  };
+
+  // Helper to convert flat fields back to items array for FeaturedPromosInline
+  const flatFieldsToItems = (props: Record<string, unknown>): unknown[] | undefined => {
+    const items: any[] = [];
+    for (let i = 0; i < 3; i++) {
+      const title = props[`item${i}Title`] as string;
+      if (title && title.trim()) {
+        items.push({
+          id: String(i + 1),
+          title: title.trim(),
+          subtitle: (props[`item${i}Subtitle`] as string)?.trim() || undefined,
+          meta: (props[`item${i}Meta`] as string)?.trim() || undefined,
+          tag: (props[`item${i}Tag`] as string)?.trim() || undefined,
+          hasImage: true, // Default to true
+        });
+      }
+    }
+    // Return undefined if no items (component will use defaultItems)
+    return items.length > 0 ? items : undefined;
+  };
+
   // Sync local props when component changes (by ID, not props to avoid loops)
   useEffect(() => {
     if (component && component.id !== componentIdRef.current) {
       componentIdRef.current = component.id;
-      setLocalProps({ ...component.props });
+      const props = { ...component.props };
+      
+      // Convert items array to flat fields for FeaturedPromosInline
+      if (component.type === 'FeaturedPromosInline' && props.items) {
+        const flatFields = itemsToFlatFields(props.items as unknown[]);
+        delete props.items; // Remove items from props
+        Object.assign(props, flatFields); // Add flat fields
+      }
+      
+      setLocalProps(props);
+      localPropsRef.current = props;
       const defaultHelp = defaultHelpText[component.type] || '';
       setLocalHelpText(component.helpText ?? defaultHelp);
     }
@@ -286,7 +341,11 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
   // Debounced save function
   const debouncedUpdate = useCallback((key: string, value: unknown) => {
     // Update local state immediately for instant UI feedback
-    setLocalProps(prev => ({ ...prev, [key]: value }));
+    setLocalProps(prev => {
+      const updated = { ...prev, [key]: value };
+      localPropsRef.current = updated;
+      return updated;
+    });
 
     // Clear existing timer
     if (debounceTimerRef.current) {
@@ -295,9 +354,26 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
 
     // Set new timer to save after 300ms of no typing
     debounceTimerRef.current = setTimeout(() => {
-      onUpdateProps({ [key]: value });
+      // For FeaturedPromosInline, convert flat fields back to items array
+      if (component?.type === 'FeaturedPromosInline') {
+        const currentProps = localPropsRef.current;
+        const items = flatFieldsToItems(currentProps);
+        const propsToSave: Record<string, unknown> = { ...currentProps };
+        if (items) {
+          propsToSave.items = items;
+        }
+        // Remove flat fields from props to save
+        ['item0Title', 'item0Subtitle', 'item0Meta', 'item0Tag', 
+         'item1Title', 'item1Subtitle', 'item1Meta', 'item1Tag',
+         'item2Title', 'item2Subtitle', 'item2Meta', 'item2Tag'].forEach(field => {
+          delete propsToSave[field];
+        });
+        onUpdateProps(propsToSave);
+      } else {
+        onUpdateProps({ [key]: value });
+      }
     }, 300);
-  }, [onUpdateProps]);
+  }, [onUpdateProps, component?.type]);
 
   // Debounced help text update
   const debouncedHelpTextUpdate = useCallback((text: string) => {

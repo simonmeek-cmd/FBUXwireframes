@@ -348,6 +348,21 @@ export const componentSchemas: ComponentSchema[] = [
       },
       { key: 'showActions', label: 'Show Actions', type: 'toggle' },
       { key: 'actionLabel', label: 'Action Label', type: 'text', placeholder: 'Read more' },
+      // Promo Item 0
+      { key: 'item0Title', label: 'Item 1 - Title', type: 'text', placeholder: 'Title' },
+      { key: 'item0Subtitle', label: 'Item 1 - Subtitle', type: 'text', placeholder: 'Subtitle' },
+      { key: 'item0Meta', label: 'Item 1 - Meta', type: 'text', placeholder: 'Meta text (optional)' },
+      { key: 'item0Tag', label: 'Item 1 - Tag', type: 'text', placeholder: 'Tag (optional)' },
+      // Promo Item 1
+      { key: 'item1Title', label: 'Item 2 - Title', type: 'text', placeholder: 'Title' },
+      { key: 'item1Subtitle', label: 'Item 2 - Subtitle', type: 'text', placeholder: 'Subtitle' },
+      { key: 'item1Meta', label: 'Item 2 - Meta', type: 'text', placeholder: 'Meta text (optional)' },
+      { key: 'item1Tag', label: 'Item 2 - Tag', type: 'text', placeholder: 'Tag (optional)' },
+      // Promo Item 2
+      { key: 'item2Title', label: 'Item 3 - Title', type: 'text', placeholder: 'Title' },
+      { key: 'item2Subtitle', label: 'Item 3 - Subtitle', type: 'text', placeholder: 'Subtitle' },
+      { key: 'item2Meta', label: 'Item 3 - Meta', type: 'text', placeholder: 'Meta text (optional)' },
+      { key: 'item2Tag', label: 'Item 3 - Tag', type: 'text', placeholder: 'Tag (optional)' },
     ],
   },
   {
