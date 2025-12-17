@@ -363,10 +363,10 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
               }}
               className="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity"
             >
-              <div className="w-8 h-8 bg-wire-500 rounded flex items-center justify-center">
-                <svg className="w-5 h-5 text-wire-300" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                </svg>
+              <div className="max-w-[200px] px-3 py-1.5 bg-wire-500 rounded flex items-center justify-center">
+                <span className="text-xs font-semibold text-wire-100 truncate">
+                  {config.logoText || 'LOGO'}
+                </span>
               </div>
             </a>
 
