@@ -82,7 +82,7 @@ export const FooterNavigation: React.FC<FooterNavigationProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Logo and tagline */}
           <div className="lg:col-span-2">
-            <div className="inline-flex items-center justify-center px-3 py-2 min-w-[48px] max-w-[200px] bg-wire-600 text-xs text-wire-100 font-bold rounded mb-4">
+            <div className="inline-flex items-center justify-center px-4 py-3 min-w-[120px] max-w-[200px] bg-wire-600 text-sm text-wire-100 font-bold rounded mb-4">
               <span className="truncate">{logoText}</span>
             </div>
             <p className="text-sm text-wire-400 mb-6">{tagline}</p>
