@@ -79,14 +79,17 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         .welcome-intro strong {
           font-weight: 600;
         }
+        .fb-logo svg {
+          height: 28px;
+        }
       `}</style>
       {/* Logo bar */}
       <div className="bg-white border-b border-wire-300 px-8 py-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div
-            className="text-wire-800"
+            className="text-wire-800 fb-logo"
             dangerouslySetInnerHTML={{ __html: fatBeehiveLogo }}
-            style={{ height: '28px', display: 'flex', alignItems: 'center' }}
+            style={{ display: 'flex', alignItems: 'center' }}
           />
           {welcomeConfig.clientLogo && (
             <img
