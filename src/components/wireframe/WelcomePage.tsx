@@ -86,7 +86,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
           <div
             className="text-wire-800"
             dangerouslySetInnerHTML={{ __html: fatBeehiveLogo }}
-            style={{ height: '50px', display: 'flex', alignItems: 'center' }}
+            style={{ height: '28px', display: 'flex', alignItems: 'center' }}
           />
           {welcomeConfig.clientLogo && (
             <img
