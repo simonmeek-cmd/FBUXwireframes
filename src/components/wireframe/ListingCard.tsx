@@ -125,3 +125,4 @@ export const ListingCard: React.FC<ListingCardProps> = ({
 
 export default ListingCard;
 
+

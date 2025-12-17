@@ -78,3 +78,4 @@ Open items / future
 - Click-to-comment with attribution (planned; not yet built).
 - Re-check Publish page after latest infinite-loop fixes (now pure derived selection).
 
+

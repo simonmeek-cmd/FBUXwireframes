@@ -113,3 +113,4 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 - Migration scripts will be created after store is updated
 - RLS policies are configured for security
 
+

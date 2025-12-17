@@ -295,3 +295,4 @@ export const getCategories = (): ComponentCategory[] => {
   return Array.from(categories).sort();
 };
 
+

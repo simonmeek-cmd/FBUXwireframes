@@ -203,3 +203,4 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
 export default DetailPage;
 
+
