@@ -363,8 +363,8 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
               }}
               className="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity"
             >
-              <div className="max-w-[200px] px-3 py-1.5 bg-wire-500 rounded flex items-center justify-center">
-                <span className="text-xs font-semibold text-wire-100 truncate">
+              <div className="max-w-[200px] px-3 py-1.5 bg-wire-500 rounded flex items-center justify-center overflow-hidden">
+                <span className="text-xs font-semibold text-wire-100 block whitespace-nowrap text-ellipsis overflow-hidden">
                   {config.logoText || 'LOGO'}
                 </span>
               </div>
