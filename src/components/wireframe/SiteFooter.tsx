@@ -38,8 +38,10 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Logo and tagline */}
           <div className="lg:col-span-2">
-            <div className="w-12 h-12 bg-wire-600 flex items-center justify-center text-xs text-wire-100 font-bold rounded mb-4">
-              {config.logoText}
+            <div className="inline-flex items-center justify-center px-4 py-3 min-w-[120px] max-w-[200px] bg-wire-600 text-sm text-wire-100 font-bold rounded mb-4 overflow-hidden">
+              <span className="block max-w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                {config.logoText}
+              </span>
             </div>
             <p className="text-sm text-wire-400 mb-6">{config.tagline}</p>
 
