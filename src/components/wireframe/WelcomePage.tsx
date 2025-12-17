@@ -2,6 +2,7 @@ import React from 'react';
 import type { WelcomePageConfig } from '../../types/welcomePage';
 import { defaultWelcomePageConfig, fatBeehiveLogo } from '../../types/welcomePage';
 import type { Page } from '../../types/builder';
+import { sortPagesForDisplay } from '../../utils/pageSort';
 
 interface WelcomePageProps {
   config?: WelcomePageConfig;
@@ -27,6 +28,8 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
     month: 'long', 
     year: 'numeric' 
   });
+
+  const sortedPages = sortPagesForDisplay(pages);
 
   return (
     <div className="min-h-screen bg-wire-50">
@@ -114,7 +117,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-wire-800 mb-4">Wireframe Pages</h2>
           <ul className="space-y-2">
-            {pages.map((page) => (
+            {sortedPages.map((page) => (
               <li key={page.id}>
                 <button
                   onClick={() => onNavigateToPage(page.id)}

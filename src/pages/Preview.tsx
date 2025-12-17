@@ -8,6 +8,7 @@ import { exportToHTML, exportToPDF } from '../utils/export';
 import { getHelpText } from '../utils/componentHelp';
 import { getComponentMeta } from '../components/builder/componentRegistry';
 import type { PlacedComponent } from '../types/builder';
+import { sortPagesForDisplay } from '../utils/pageSort';
 
 // Component wrapper with info icon for annotations
 const AnnotatedComponent: React.FC<{
@@ -120,15 +121,7 @@ export const Preview: React.FC = () => {
 
   // If pageId is provided, show that specific page; otherwise show navigation between all pages
   const pages = project.pages;
-  
-  // Sort pages: homepage first, then alphabetically
-  const sortedPages = [...pages].sort((a, b) => {
-    // Homepage always first
-    if (a.type === 'homepage' && b.type !== 'homepage') return -1;
-    if (a.type !== 'homepage' && b.type === 'homepage') return 1;
-    // Then alphabetical by name
-    return a.name.localeCompare(b.name);
-  });
+  const sortedPages = sortPagesForDisplay(pages);
   
   const currentPage = pageId
     ? sortedPages.find((p) => p.id === pageId)

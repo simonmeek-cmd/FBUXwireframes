@@ -8,6 +8,7 @@ import { WelcomePageSettings } from '../components/builder/WelcomePageSettings';
 import { exportStaticSiteSSR } from '../utils/exportStaticSiteSSR';
 import { exportProjectJSON } from '../utils/exportStaticSite';
 import type { PageType, ComponentType } from '../types/builder';
+import { sortPagesForDisplay } from '../utils/pageSort';
 import type { NavigationConfig } from '../types/navigation';
 import type { FooterConfig } from '../types/footer';
 import type { WelcomePageConfig } from '../types/welcomePage';
@@ -124,14 +125,7 @@ export const ProjectView: React.FC = () => {
     return PAGE_TYPES.find((t) => t.value === type)?.label || type;
   };
 
-  // Sort pages: homepage first, then alphabetically
-  const sortedPages = [...project.pages].sort((a, b) => {
-    // Homepage always first
-    if (a.type === 'homepage' && b.type !== 'homepage') return -1;
-    if (a.type !== 'homepage' && b.type === 'homepage') return 1;
-    // Then alphabetical by name
-    return a.name.localeCompare(b.name);
-  });
+  const sortedPages = sortPagesForDisplay(project.pages);
 
   return (
     <div className="min-h-screen bg-wire-100">
