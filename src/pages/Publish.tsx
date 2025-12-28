@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
 import { SiteNavigation } from '../components/wireframe/SiteNavigation';
@@ -11,14 +11,63 @@ import { sortPagesForDisplay } from '../utils/pageSort';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions';
 
-// Component wrapper with info icon for annotations
+// Comment type matching the database schema
+interface Comment {
+  id: string;
+  project_id: string;
+  page_id: string | null;
+  target_id: string | null;
+  x_pct: number | null;
+  y_pct: number | null;
+  comment_text: string;
+  author_name: string;
+  author_email: string | null;
+  status: 'new' | 'resolved' | 'archived';
+  created_at: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+}
+
+// Comment marker component
+const CommentMarker: React.FC<{
+  comment: Comment;
+  onClick: () => void;
+}> = ({ comment, onClick }) => {
+  const style: React.CSSProperties = {};
+  if (comment.x_pct !== null && comment.y_pct !== null) {
+    style.position = 'absolute';
+    style.left = `${comment.x_pct * 100}%`;
+    style.top = `${comment.y_pct * 100}%`;
+    style.transform = 'translate(-50%, -50%)';
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="absolute w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg hover:bg-blue-600 transition-colors z-30 cursor-pointer"
+      style={style}
+      title={`Comment by ${comment.author_name}`}
+    >
+      {comment.status === 'new' ? '💬' : '✓'}
+    </button>
+  );
+};
+
+// Component wrapper with info icon for annotations and comment markers
 const AnnotatedComponent: React.FC<{
   component: PlacedComponent;
   showAnnotations: boolean;
   onShowHelp: (component: PlacedComponent) => void;
-}> = ({ component, showAnnotations, onShowHelp }) => {
+  comments?: Comment[];
+  onShowComment: (comment: Comment) => void;
+}> = ({ component, showAnnotations, onShowHelp, comments = [], onShowComment }) => {
   const [isHovered, setIsHovered] = useState(false);
   const meta = getComponentMeta(component.type);
+  
+  // Filter comments for this component
+  const componentComments = useMemo(() => {
+    return comments.filter(c => c.target_id === component.id);
+  }, [comments, component.id]);
 
   return (
     <div
@@ -27,6 +76,15 @@ const AnnotatedComponent: React.FC<{
       onMouseLeave={() => setIsHovered(false)}
     >
       <ComponentRenderer type={component.type} props={component.props} />
+      
+      {/* Comment markers */}
+      {componentComments.map((comment) => (
+        <CommentMarker
+          key={comment.id}
+          comment={comment}
+          onClick={() => onShowComment(comment)}
+        />
+      ))}
       
       {/* Info icon - appears on hover when annotations are enabled */}
       {showAnnotations && isHovered && (
@@ -96,6 +154,69 @@ const HelpPopup: React.FC<{
   );
 };
 
+// Comment popup/modal
+const CommentPopup: React.FC<{
+  comment: Comment | null;
+  onClose: () => void;
+}> = ({ comment, onClose }) => {
+  if (!comment) return null;
+
+  const date = new Date(comment.created_at).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-wire-200 bg-wire-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+              💬
+            </div>
+            <div>
+              <h3 className="font-bold text-wire-800">Comment</h3>
+              <p className="text-xs text-wire-500">by {comment.author_name}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-wire-500 hover:text-wire-800 rounded"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 overflow-y-auto">
+          <p className="text-wire-700 leading-relaxed whitespace-pre-wrap mb-4">{comment.comment_text}</p>
+          <div className="text-xs text-wire-500 space-y-1">
+            <p>Posted: {date}</p>
+            {comment.author_email && <p>Email: {comment.author_email}</p>}
+            <p>Status: <span className="capitalize">{comment.status}</span></p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-wire-200 bg-wire-50">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-wire-700 text-white rounded hover:bg-wire-800 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Publish: React.FC = () => {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
   const [project, setProject] = useState<Project & { clientName?: string } | null>(null);
@@ -103,6 +224,8 @@ export const Publish: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [activeComment, setActiveComment] = useState<Comment | null>(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -137,6 +260,32 @@ export const Publish: React.FC = () => {
 
     fetchProject();
   }, [projectId]);
+
+  // Fetch comments when projectId or pageId changes
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!projectId) return;
+
+      try {
+        const url = `${API_BASE_URL}/comments?projectId=${projectId}${pageId ? `&pageId=${pageId}` : ''}`;
+        const response = await fetch(url);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setComments(Array.isArray(data) ? data : []);
+        } else {
+          // Comments are optional, so we don't treat errors as fatal
+          console.warn('Failed to fetch comments:', response.statusText);
+          setComments([]);
+        }
+      } catch (err) {
+        console.warn('Error fetching comments:', err);
+        setComments([]);
+      }
+    };
+
+    fetchComments();
+  }, [projectId, pageId]);
 
   if (loading) {
     return (
@@ -308,6 +457,8 @@ export const Publish: React.FC = () => {
                   component={component}
                   showAnnotations={showAnnotations}
                   onShowHelp={setActiveHelpComponent}
+                  comments={comments}
+                  onShowComment={setActiveComment}
                 />
               ))}
           </div>
@@ -317,6 +468,12 @@ export const Publish: React.FC = () => {
         <HelpPopup
           component={activeHelpComponent}
           onClose={() => setActiveHelpComponent(null)}
+        />
+
+        {/* Comment popup */}
+        <CommentPopup
+          comment={activeComment}
+          onClose={() => setActiveComment(null)}
         />
 
         {/* Site Footer */}
