@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
 import { SiteNavigation } from '../components/wireframe/SiteNavigation';
@@ -60,8 +60,11 @@ const AnnotatedComponent: React.FC<{
   onShowHelp: (component: PlacedComponent) => void;
   comments?: Comment[];
   onShowComment: (comment: Comment) => void;
-}> = ({ component, showAnnotations, onShowHelp, comments = [], onShowComment }) => {
+  commentMode?: boolean;
+  onAddComment?: (component: PlacedComponent, xPct: number, yPct: number) => void;
+}> = ({ component, showAnnotations, onShowHelp, comments = [], onShowComment, commentMode = false, onAddComment }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const componentRef = useRef<HTMLDivElement>(null);
   const meta = getComponentMeta(component.type);
   
   // Filter comments for this component
@@ -69,27 +72,57 @@ const AnnotatedComponent: React.FC<{
     return comments.filter(c => c.target_id === component.id);
   }, [comments, component.id]);
 
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!commentMode || !onAddComment || !componentRef.current) return;
+    
+    // Calculate click position relative to component
+    const rect = componentRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const xPct = rect.width > 0 ? x / rect.width : 0.5;
+    const yPct = rect.height > 0 ? y / rect.height : 0.5;
+    
+    onAddComment(component, xPct, yPct);
+  };
+
   return (
     <div
-      className="relative group"
+      ref={componentRef}
+      className={`relative group ${commentMode ? 'cursor-crosshair' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleClick}
     >
       <ComponentRenderer type={component.type} props={component.props} />
+      
+      {/* Comment mode indicator */}
+      {commentMode && (
+        <div className="absolute inset-0 border-2 border-dashed border-blue-400 bg-blue-50/20 pointer-events-none z-10">
+          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+            Click to add comment
+          </div>
+        </div>
+      )}
       
       {/* Comment markers */}
       {componentComments.map((comment) => (
         <CommentMarker
           key={comment.id}
           comment={comment}
-          onClick={() => onShowComment(comment)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onShowComment(comment);
+          }}
         />
       ))}
       
       {/* Info icon - appears on hover when annotations are enabled */}
-      {showAnnotations && isHovered && (
+      {showAnnotations && isHovered && !commentMode && (
         <button
-          onClick={() => onShowHelp(component)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onShowHelp(component);
+          }}
           className="absolute top-4 left-4 w-8 h-8 bg-wire-700 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg hover:bg-wire-800 transition-colors z-20"
           title={`About: ${meta?.label || component.type}`}
         >
@@ -154,7 +187,7 @@ const HelpPopup: React.FC<{
   );
 };
 
-// Comment popup/modal
+// Comment popup/modal (for viewing existing comments)
 const CommentPopup: React.FC<{
   comment: Comment | null;
   onClose: () => void;
@@ -170,8 +203,8 @@ const CommentPopup: React.FC<{
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-wire-200 bg-wire-100">
           <div className="flex items-center gap-3">
@@ -217,6 +250,160 @@ const CommentPopup: React.FC<{
   );
 };
 
+// Comment form modal (for adding new comments)
+const CommentForm: React.FC<{
+  component: PlacedComponent | null;
+  xPct: number;
+  yPct: number;
+  onClose: () => void;
+  onSubmit: (data: { authorName: string; authorEmail: string; message: string }) => Promise<void>;
+}> = ({ component, xPct, yPct, onClose, onSubmit }) => {
+  const [authorName, setAuthorName] = useState(() => {
+    return localStorage.getItem('commentAuthorName') || '';
+  });
+  const [authorEmail, setAuthorEmail] = useState(() => {
+    return localStorage.getItem('commentAuthorEmail') || '';
+  });
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!component) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) {
+      setError('Please enter a comment');
+      return;
+    }
+    if (!authorName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      // Save to localStorage for convenience
+      localStorage.setItem('commentAuthorName', authorName);
+      if (authorEmail) {
+        localStorage.setItem('commentAuthorEmail', authorEmail);
+      }
+
+      await onSubmit({ authorName, authorEmail, message });
+      setMessage('');
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit comment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-wire-200 bg-wire-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+              💬
+            </div>
+            <div>
+              <h3 className="font-bold text-wire-800">Add Comment</h3>
+              <p className="text-xs text-wire-500">{getComponentMeta(component.type)?.label || component.type}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-wire-500 hover:text-wire-800 rounded"
+            disabled={submitting}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="authorName" className="block text-sm font-medium text-wire-700 mb-1">
+              Your Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="authorName"
+              type="text"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-wire-300 rounded focus:outline-none focus:border-wire-500"
+              placeholder="John Doe"
+              disabled={submitting}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="authorEmail" className="block text-sm font-medium text-wire-700 mb-1">
+              Your Email
+            </label>
+            <input
+              id="authorEmail"
+              type="email"
+              value={authorEmail}
+              onChange={(e) => setAuthorEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-wire-300 rounded focus:outline-none focus:border-wire-500"
+              placeholder="john@example.com"
+              disabled={submitting}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="message" className="block text-sm font-medium text-wire-700 mb-1">
+              Comment <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              required
+              rows={4}
+              className="w-full px-3 py-2 border border-wire-300 rounded focus:outline-none focus:border-wire-500"
+              placeholder="Add your feedback here..."
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="flex-1 px-4 py-2 border border-wire-300 text-wire-700 rounded hover:bg-wire-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
+            >
+              {submitting ? 'Submitting...' : 'Submit Comment'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 export const Publish: React.FC = () => {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
   const [project, setProject] = useState<Project & { clientName?: string } | null>(null);
@@ -226,6 +413,8 @@ export const Publish: React.FC = () => {
   const [activeHelpComponent, setActiveHelpComponent] = useState<PlacedComponent | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [activeComment, setActiveComment] = useState<Comment | null>(null);
+  const [commentMode, setCommentMode] = useState(false);
+  const [pendingComment, setPendingComment] = useState<{ component: PlacedComponent; xPct: number; yPct: number } | null>(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -262,30 +451,63 @@ export const Publish: React.FC = () => {
   }, [projectId]);
 
   // Fetch comments when projectId or pageId changes
-  useEffect(() => {
-    const fetchComments = async () => {
-      if (!projectId) return;
+  const fetchComments = useCallback(async () => {
+    if (!projectId) return;
 
-      try {
-        const url = `${API_BASE_URL}/comments?projectId=${projectId}${pageId ? `&pageId=${pageId}` : ''}`;
-        const response = await fetch(url);
-        
-        if (response.ok) {
-          const data = await response.json();
-          setComments(Array.isArray(data) ? data : []);
-        } else {
-          // Comments are optional, so we don't treat errors as fatal
-          console.warn('Failed to fetch comments:', response.statusText);
-          setComments([]);
-        }
-      } catch (err) {
-        console.warn('Error fetching comments:', err);
+    try {
+      const url = `${API_BASE_URL}/comments?projectId=${projectId}${pageId ? `&pageId=${pageId}` : ''}`;
+      const response = await fetch(url);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setComments(Array.isArray(data) ? data : []);
+      } else {
+        // Comments are optional, so we don't treat errors as fatal
+        console.warn('Failed to fetch comments:', response.statusText);
         setComments([]);
       }
-    };
-
-    fetchComments();
+    } catch (err) {
+      console.warn('Error fetching comments:', err);
+      setComments([]);
+    }
   }, [projectId, pageId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
+
+  // Handle adding a new comment
+  const handleAddComment = useCallback((component: PlacedComponent, xPct: number, yPct: number) => {
+    setPendingComment({ component, xPct, yPct });
+  }, []);
+
+  // Submit comment
+  const handleSubmitComment = useCallback(async (data: { authorName: string; authorEmail: string; message: string }) => {
+    if (!projectId || !pendingComment) return;
+
+    const response = await fetch(`${API_BASE_URL}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId,
+        pageId: pageId || null,
+        targetId: pendingComment.component.id,
+        xPct: pendingComment.xPct,
+        yPct: pendingComment.yPct,
+        authorName: data.authorName,
+        authorEmail: data.authorEmail || null,
+        message: data.message,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to submit comment');
+    }
+
+    // Refresh comments
+    await fetchComments();
+  }, [projectId, pageId, pendingComment, fetchComments]);
 
   if (loading) {
     return (
@@ -389,6 +611,20 @@ export const Publish: React.FC = () => {
             </svg>
           </button>
 
+          {/* Comment mode toggle */}
+          <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
+          <button
+            onClick={() => setCommentMode(!commentMode)}
+            className={`px-3 py-1.5 text-sm rounded whitespace-nowrap transition-colors ${
+              commentMode
+                ? 'bg-blue-500 text-white'
+                : 'bg-wire-100 text-wire-700 hover:bg-wire-300'
+            }`}
+            title={commentMode ? 'Exit comment mode' : 'Enable comment mode'}
+          >
+            {commentMode ? '💬 Comment Mode ON' : '💬 Add Comments'}
+          </button>
+
           {/* Page tabs */}
           {sortedPages.length > 1 && (
             <>
@@ -459,6 +695,8 @@ export const Publish: React.FC = () => {
                   onShowHelp={setActiveHelpComponent}
                   comments={comments}
                   onShowComment={setActiveComment}
+                  commentMode={commentMode}
+                  onAddComment={handleAddComment}
                 />
               ))}
           </div>
@@ -470,11 +708,22 @@ export const Publish: React.FC = () => {
           onClose={() => setActiveHelpComponent(null)}
         />
 
-        {/* Comment popup */}
+        {/* Comment popup (view existing) */}
         <CommentPopup
           comment={activeComment}
           onClose={() => setActiveComment(null)}
         />
+
+        {/* Comment form (add new) */}
+        {pendingComment && (
+          <CommentForm
+            component={pendingComment.component}
+            xPct={pendingComment.xPct}
+            yPct={pendingComment.yPct}
+            onClose={() => setPendingComment(null)}
+            onSubmit={handleSubmitComment}
+          />
+        )}
 
         {/* Site Footer */}
         {project.footerConfig && (
