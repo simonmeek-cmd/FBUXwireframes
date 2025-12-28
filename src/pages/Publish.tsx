@@ -69,7 +69,12 @@ const AnnotatedComponent: React.FC<{
   
   // Filter comments for this component
   const componentComments = useMemo(() => {
-    return comments.filter(c => c.target_id === component.id);
+    const filtered = comments.filter(c => c.target_id === component.id);
+    // Debug logging
+    if (filtered.length > 0) {
+      console.log('Component comments found:', filtered.length, 'for component', component.id);
+    }
+    return filtered;
   }, [comments, component.id]);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -460,7 +465,10 @@ export const Publish: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setComments(Array.isArray(data) ? data : []);
+        const commentsArray = Array.isArray(data) ? data : [];
+        console.log('Fetched comments:', commentsArray.length, 'for pageId:', pageId);
+        console.log('Comments data:', commentsArray);
+        setComments(commentsArray);
       } else {
         // Comments are optional, so we don't treat errors as fatal
         console.warn('Failed to fetch comments:', response.statusText);
@@ -504,6 +512,9 @@ export const Publish: React.FC = () => {
       const error = await response.json();
       throw new Error(error.error || 'Failed to submit comment');
     }
+
+    const newComment = await response.json();
+    console.log('Comment submitted successfully:', newComment);
 
     // Refresh comments
     await fetchComments();
