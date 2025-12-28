@@ -15,16 +15,6 @@ export const Login: React.FC = () => {
     setError(null);
 
     try {
-      // Check if Supabase is properly configured
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder')) {
-        setError('Supabase is not configured. Please check environment variables.');
-        setLoading(false);
-        return;
-      }
-
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
