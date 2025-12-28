@@ -15,6 +15,16 @@ export const Login: React.FC = () => {
     setError(null);
 
     try {
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder')) {
+        setError('Supabase is not configured. Please check environment variables.');
+        setLoading(false);
+        return;
+      }
+
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -31,8 +41,12 @@ export const Login: React.FC = () => {
         navigate('/');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
-    } finally {
+      // Handle network errors specifically
+      if (err.message?.includes('fetch') || err.message?.includes('network') || err.name === 'TypeError') {
+        setError('Network error: Unable to connect to authentication service. Please check your connection and try again.');
+      } else {
+        setError(err.message || 'An error occurred');
+      }
       setLoading(false);
     }
   };
