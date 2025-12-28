@@ -41,14 +41,19 @@ const CommentMarker: React.FC<{
     style.transform = 'translate(-50%, -50%)';
   }
 
+  // Get first initial of author name
+  const initial = comment.author_name?.charAt(0).toUpperCase() || '?';
+
   return (
     <button
       onClick={onClick}
-      className="absolute w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg hover:bg-blue-600 transition-colors z-30 cursor-pointer"
+      className={`absolute w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md hover:bg-blue-600 transition-colors z-30 cursor-pointer ${
+        comment.status === 'resolved' ? 'opacity-60' : ''
+      }`}
       style={style}
-      title={`Comment by ${comment.author_name}`}
+      title={`Comment by ${comment.author_name}${comment.status === 'resolved' ? ' (resolved)' : ''}`}
     >
-      {comment.status === 'new' ? '💬' : '✓'}
+      {comment.status === 'resolved' ? '✓' : initial}
     </button>
   );
 };
