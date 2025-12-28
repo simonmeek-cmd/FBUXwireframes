@@ -32,6 +32,15 @@ export const supabase = createClient(
   }
 );
 
+// Log the configured URL (for debugging, but don't expose the full key)
+if (typeof window !== 'undefined' && supabaseUrl) {
+  console.log('🔵 Supabase URL configured:', supabaseUrl);
+  // Check if URL looks valid
+  if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+    console.warn('⚠️ Supabase URL format looks incorrect. Should be: https://[project-ref].supabase.co');
+  }
+}
+
 // Helper to get the current user
 export const getCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser();
