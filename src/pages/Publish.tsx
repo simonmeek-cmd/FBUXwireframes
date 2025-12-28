@@ -31,7 +31,7 @@ interface Comment {
 // Comment marker component
 const CommentMarker: React.FC<{
   comment: Comment;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }> = ({ comment, onClick }) => {
   const style: React.CSSProperties = {};
   if (comment.x_pct !== null && comment.y_pct !== null) {
