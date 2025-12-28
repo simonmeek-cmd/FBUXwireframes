@@ -260,6 +260,188 @@ const CommentPopup: React.FC<{
   );
 };
 
+// General comments sidebar
+const GeneralCommentsSidebar: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  comments: Comment[];
+  onSubmit: (data: { authorName: string; authorEmail: string; message: string }) => Promise<void>;
+  onCommentClick: (comment: Comment) => void;
+}> = ({ isOpen, onClose, comments, onSubmit, onCommentClick }) => {
+  const [authorName, setAuthorName] = useState(() => {
+    return localStorage.getItem('commentAuthorName') || '';
+  });
+  const [authorEmail, setAuthorEmail] = useState(() => {
+    return localStorage.getItem('commentAuthorEmail') || '';
+  });
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filter general comments (no target_id)
+  const generalComments = useMemo(() => {
+    return comments.filter(c => !c.target_id).sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [comments]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) {
+      setError('Please enter a comment');
+      return;
+    }
+    if (!authorName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      // Save to localStorage for convenience
+      localStorage.setItem('commentAuthorName', authorName);
+      if (authorEmail) {
+        localStorage.setItem('commentAuthorEmail', authorEmail);
+      }
+
+      await onSubmit({ authorName, authorEmail, message });
+      setMessage('');
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit comment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed right-0 top-0 bottom-0 w-96 bg-white border-l border-wire-300 shadow-xl z-40 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-wire-200 bg-wire-100">
+        <h2 className="font-bold text-wire-800">General Comments</h2>
+        <button
+          onClick={onClose}
+          className="p-2 text-wire-500 hover:text-wire-800 rounded"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Content - scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Existing comments */}
+        <div className="p-4 space-y-4">
+          {generalComments.length > 0 ? (
+            generalComments.map((comment) => {
+              const date = new Date(comment.created_at).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+              const initial = comment.author_name?.charAt(0).toUpperCase() || '?';
+              
+              return (
+                <div
+                  key={comment.id}
+                  onClick={() => onCommentClick(comment)}
+                  className="p-3 bg-wire-50 border border-wire-200 rounded cursor-pointer hover:bg-wire-100 transition-colors"
+                >
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      {initial}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-wire-800 text-sm">{comment.author_name}</span>
+                        <span className="text-xs text-wire-500">{date}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-wire-700 whitespace-pre-wrap line-clamp-3">{comment.comment_text}</p>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-sm text-wire-500 text-center py-8">No general comments yet</p>
+          )}
+        </div>
+      </div>
+
+      {/* Form - fixed at bottom */}
+      <div className="border-t border-wire-200 bg-wire-50 p-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {error && (
+            <div className="p-2 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="generalAuthorName" className="block text-xs font-medium text-wire-700 mb-1">
+              Your Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="generalAuthorName"
+              type="text"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              required
+              className="w-full px-2 py-1.5 text-sm border border-wire-300 rounded focus:outline-none focus:border-wire-500"
+              placeholder="John Doe"
+              disabled={submitting}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="generalAuthorEmail" className="block text-xs font-medium text-wire-700 mb-1">
+              Your Email
+            </label>
+            <input
+              id="generalAuthorEmail"
+              type="email"
+              value={authorEmail}
+              onChange={(e) => setAuthorEmail(e.target.value)}
+              className="w-full px-2 py-1.5 text-sm border border-wire-300 rounded focus:outline-none focus:border-wire-500"
+              placeholder="john@example.com"
+              disabled={submitting}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="generalMessage" className="block text-xs font-medium text-wire-700 mb-1">
+              Comment <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="generalMessage"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              required
+              rows={3}
+              className="w-full px-2 py-1.5 text-sm border border-wire-300 rounded focus:outline-none focus:border-wire-500"
+              placeholder="Add your general feedback here..."
+              disabled={submitting}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full px-3 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
+          >
+            {submitting ? 'Submitting...' : 'Submit Comment'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // Comment form modal (for adding new comments)
 const CommentForm: React.FC<{
   component: PlacedComponent | null;
@@ -425,6 +607,7 @@ export const Publish: React.FC = () => {
   const [activeComment, setActiveComment] = useState<Comment | null>(null);
   const [commentMode, setCommentMode] = useState(false);
   const [pendingComment, setPendingComment] = useState<{ component: PlacedComponent; xPct: number; yPct: number } | null>(null);
+  const [showGeneralCommentsSidebar, setShowGeneralCommentsSidebar] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -494,7 +677,7 @@ export const Publish: React.FC = () => {
     setPendingComment({ component, xPct, yPct });
   }, []);
 
-  // Submit comment
+  // Submit comment (component-specific)
   const handleSubmitComment = useCallback(async (data: { authorName: string; authorEmail: string; message: string }) => {
     if (!projectId || !pendingComment) return;
 
@@ -524,6 +707,37 @@ export const Publish: React.FC = () => {
     // Refresh comments
     await fetchComments();
   }, [projectId, pageId, pendingComment, fetchComments]);
+
+  // Submit general comment (no target_id, x_pct, y_pct)
+  const handleSubmitGeneralComment = useCallback(async (data: { authorName: string; authorEmail: string; message: string }) => {
+    if (!projectId) return;
+
+    const response = await fetch(`${API_BASE_URL}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId,
+        pageId: pageId || null,
+        targetId: null,
+        xPct: null,
+        yPct: null,
+        authorName: data.authorName,
+        authorEmail: data.authorEmail || null,
+        message: data.message,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to submit comment');
+    }
+
+    const newComment = await response.json();
+    console.log('General comment submitted successfully:', newComment);
+
+    // Refresh comments
+    await fetchComments();
+  }, [projectId, pageId, fetchComments]);
 
   if (loading) {
     return (
@@ -641,6 +855,24 @@ export const Publish: React.FC = () => {
             {commentMode ? '💬 Comment Mode ON' : '💬 Add Comments'}
           </button>
 
+          {/* General comments button (only when comment mode is active) */}
+          {commentMode && (
+            <>
+              <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
+              <button
+                onClick={() => setShowGeneralCommentsSidebar(!showGeneralCommentsSidebar)}
+                className={`px-3 py-1.5 text-sm rounded whitespace-nowrap transition-colors ${
+                  showGeneralCommentsSidebar
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-wire-100 text-wire-700 hover:bg-wire-300'
+                }`}
+                title="Add general comments"
+              >
+                📝 General Comments
+              </button>
+            </>
+          )}
+
           {/* Page tabs */}
           {sortedPages.length > 1 && (
             <>
@@ -740,6 +972,15 @@ export const Publish: React.FC = () => {
             onSubmit={handleSubmitComment}
           />
         )}
+
+        {/* General comments sidebar */}
+        <GeneralCommentsSidebar
+          isOpen={showGeneralCommentsSidebar}
+          onClose={() => setShowGeneralCommentsSidebar(false)}
+          comments={comments}
+          onSubmit={handleSubmitGeneralComment}
+          onCommentClick={setActiveComment}
+        />
 
         {/* Site Footer */}
         {project.footerConfig && (
