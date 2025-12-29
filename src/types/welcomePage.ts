@@ -25,7 +25,14 @@ export const defaultIntroCopy = `<h2>What are wireframes?</h2>
 <h2>How to use this prototype</h2>
 <p>Click through the pages listed below to explore the proposed structure. You can navigate between pages using the header menu, just like on a real website. Please note that this is a structural prototype – final colours, typography, and imagery will be developed in the design phase.</p>
 
-<p>We welcome your feedback on the page layouts, content organisation, and user flow. Please share any comments or questions with your project team.</p>
+<h2>Adding comments</h2>
+<p>You can add comments directly to any page to provide feedback on specific elements:</p>
+<ul>
+  <li><strong>Click the comment icon</strong> in the top navigation to enable comment mode</li>
+  <li><strong>Click anywhere on the page</strong> to add a comment at that location</li>
+  <li><strong>Use the dropdown menu</strong> (arrow next to the comment icon) to add general comments or notify us when you've finished</li>
+</ul>
+<p>Your comments will be saved and visible to the project team. We welcome your feedback on the page layouts, content organisation, and user flow.</p>
 `;
 
 export const defaultWelcomePageConfig: WelcomePageConfig = {
