@@ -875,14 +875,25 @@ export const Publish: React.FC = () => {
               <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
               <button
                 onClick={() => setShowGeneralCommentsSidebar(!showGeneralCommentsSidebar)}
-                className={`px-3 py-1.5 text-sm rounded whitespace-nowrap transition-colors ${
+                className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors ${
                   showGeneralCommentsSidebar
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-wire-100 text-wire-700 hover:bg-wire-300'
+                    ? 'bg-blue-500 text-white border-blue-500'
+                    : 'bg-wire-50 text-wire-700 border-wire-400 hover:bg-wire-300'
                 }`}
                 title="Add general comments"
               >
-                📝 General Comments
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>
+                </svg>
               </button>
             </>
           )}
