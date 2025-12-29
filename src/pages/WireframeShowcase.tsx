@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ComponentType } from '../types/builder';
 import {
   PrimarySecondaryNavigation,
   LocalBreadcrumbs,
@@ -45,11 +46,16 @@ const ShowcaseSection: React.FC<ShowcaseSectionProps> = ({
   </section>
 );
 
+interface WireframeShowcaseProps {
+  activeComponentsOverride?: ComponentType[];
+}
+
 /**
  * WireframeShowcase
  * A page that renders all wireframe components for visual QA and documentation.
+ * If activeComponentsOverride is provided, only those components will be shown.
  */
-export const WireframeShowcase: React.FC = () => {
+export const WireframeShowcase: React.FC<WireframeShowcaseProps> = ({ activeComponentsOverride }) => {
   return (
     <div className="min-h-screen bg-wire-100">
       {/* Header */}
