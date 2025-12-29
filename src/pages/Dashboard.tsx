@@ -4,7 +4,7 @@ import { useBuilderStore } from '../stores/useBuilderStore';
 import { exportAllDataJSON } from '../utils/exportStaticSite';
 
 export const Dashboard: React.FC = () => {
-  const { clients, projects, addClient, deleteClient, initialize } = useBuilderStore();
+  const { clients, projects, addClient, deleteClient, initialize, loading } = useBuilderStore();
   const [newClientName, setNewClientName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -169,7 +169,14 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* Client list */}
-        {clients.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12 bg-wire-50 rounded border border-wire-200">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-wire-300 border-t-wire-600 rounded-full animate-spin"></div>
+              <p className="text-wire-500">Loading clients...</p>
+            </div>
+          </div>
+        ) : clients.length === 0 ? (
           <div className="text-center py-12 bg-wire-50 rounded border border-wire-200">
             <p className="text-wire-500 mb-4">No clients yet</p>
             {!isAdding && (
