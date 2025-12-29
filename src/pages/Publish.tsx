@@ -753,7 +753,7 @@ export const Publish: React.FC = () => {
     // Build email content
     const subject = encodeURIComponent(`Wireframe Comments Complete: ${project.name}`);
     const body = encodeURIComponent(
-      `A client has finished adding comments to their wireframe.
+      `We've finished adding comments to our wireframe!
 
 Project: ${project.name}
 Project URL: ${pageUrl}
