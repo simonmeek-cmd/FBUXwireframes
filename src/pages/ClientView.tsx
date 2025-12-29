@@ -4,9 +4,12 @@ import { useBuilderStore } from '../stores/useBuilderStore';
 
 export const ClientView: React.FC = () => {
   const { clientId } = useParams<{ clientId: string }>();
-  const { getClient, getProjectsForClient, addProject, deleteProject, duplicateProject } = useBuilderStore();
+  const { getClient, getProjectsForClient, addProject, deleteProject, duplicateProject, updateProject } = useBuilderStore();
   const [newProjectName, setNewProjectName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
+  const [renamingProjectName, setRenamingProjectName] = useState('');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const client = clientId ? getClient(clientId) : undefined;
   const projects = clientId ? getProjectsForClient(clientId) : [];
@@ -31,6 +34,7 @@ export const ClientView: React.FC = () => {
   };
 
   const handleDuplicateProject = async (id: string, name: string) => {
+    setOpenMenuId(null);
     if (!confirm(`Duplicate project "${name}"? This will create a copy with all pages and settings, but without comments.`)) {
       return;
     }
@@ -43,6 +47,31 @@ export const ClientView: React.FC = () => {
       console.error('Failed to duplicate project:', err);
       alert('Failed to duplicate project. Please try again.');
     }
+  };
+
+  const handleRenameProject = (id: string, currentName: string) => {
+    setOpenMenuId(null);
+    setRenamingProjectId(id);
+    setRenamingProjectName(currentName);
+  };
+
+  const handleSaveRename = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renamingProjectId || !renamingProjectName.trim()) return;
+
+    try {
+      await updateProject(renamingProjectId, renamingProjectName.trim());
+      setRenamingProjectId(null);
+      setRenamingProjectName('');
+    } catch (err: any) {
+      console.error('Failed to rename project:', err);
+      alert('Failed to rename project. Please try again.');
+    }
+  };
+
+  const handleCancelRename = () => {
+    setRenamingProjectId(null);
+    setRenamingProjectName('');
   };
 
   return (
@@ -123,51 +152,122 @@ export const ClientView: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {projects.map((project) => (
-              <div
-                key={project.id}
-                className="flex items-center justify-between p-4 bg-wire-50 border border-wire-200 rounded hover:bg-wire-100 transition-colors"
-              >
-                <div>
-                  <Link
-                    to={`/project/${project.id}`}
-                    className="font-medium text-wire-800 hover:text-wire-600"
-                  >
-                    {project.name}
-                  </Link>
-                  <p className="text-sm text-wire-500">
-                    {project.pages.length} page{project.pages.length !== 1 ? 's' : ''} • 
-                    Created {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : 'Unknown date'}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Link
-                    to={`/project/${project.id}`}
-                    className="px-3 py-1.5 text-sm bg-wire-200 text-wire-700 rounded hover:bg-wire-300 transition-colors no-underline"
-                  >
-                    Edit Pages
-                  </Link>
-                  {project.pages.length > 0 && (
-                    <Link
-                      to={`/preview/${project.id}`}
-                      className="px-3 py-1.5 text-sm bg-wire-600 text-wire-100 rounded hover:bg-wire-700 transition-colors no-underline"
-                    >
-                      Preview
-                    </Link>
-                  )}
-                  <button
-                    onClick={() => handleDuplicateProject(project.id, project.name)}
-                    className="px-3 py-1.5 text-sm text-wire-500 hover:text-wire-700 hover:bg-wire-100 rounded transition-colors"
-                    title="Duplicate project"
-                  >
-                    Duplicate
-                  </button>
-                  <button
-                    onClick={() => handleDeleteProject(project.id, project.name)}
-                    className="px-3 py-1.5 text-sm text-wire-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
+              <div key={project.id}>
+                {renamingProjectId === project.id ? (
+                  <form onSubmit={handleSaveRename} className="p-4 bg-wire-50 border border-wire-200 rounded">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={renamingProjectName}
+                        onChange={(e) => setRenamingProjectName(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-white border border-wire-300 rounded focus:outline-none focus:border-wire-500"
+                        autoFocus
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-wire-600 text-wire-100 rounded hover:bg-wire-700 transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelRename}
+                        className="px-4 py-2 border border-wire-400 text-wire-600 rounded hover:bg-wire-300 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex items-center justify-between p-4 bg-wire-50 border border-wire-200 rounded hover:bg-wire-100 transition-colors">
+                    <div>
+                      <Link
+                        to={`/project/${project.id}`}
+                        className="font-medium text-wire-800 hover:text-wire-600"
+                      >
+                        {project.name}
+                      </Link>
+                      <p className="text-sm text-wire-500">
+                        {project.pages.length} page{project.pages.length !== 1 ? 's' : ''} • 
+                        Created {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : 'Unknown date'}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <Link
+                        to={`/project/${project.id}`}
+                        className="px-3 py-1.5 text-sm bg-wire-200 text-wire-700 rounded hover:bg-wire-300 transition-colors no-underline"
+                      >
+                        Edit Pages
+                      </Link>
+                      {project.pages.length > 0 && (
+                        <Link
+                          to={`/preview/${project.id}`}
+                          className="px-3 py-1.5 text-sm bg-wire-600 text-wire-100 rounded hover:bg-wire-700 transition-colors no-underline"
+                        >
+                          Preview
+                        </Link>
+                      )}
+                      
+                      {/* Three-dot menu */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setOpenMenuId(openMenuId === project.id ? null : project.id)}
+                          className="p-1.5 text-wire-500 hover:text-wire-700 hover:bg-wire-100 rounded transition-colors"
+                          title="Project options"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="1"/>
+                            <circle cx="12" cy="5" r="1"/>
+                            <circle cx="12" cy="19" r="1"/>
+                          </svg>
+                        </button>
+                        
+                        {openMenuId === project.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setOpenMenuId(null)}
+                            />
+                            <div className="absolute right-0 top-8 z-20 bg-white border border-wire-300 rounded shadow-lg min-w-[160px]">
+                              <button
+                                onClick={() => handleRenameProject(project.id, project.name)}
+                                className="w-full text-left px-4 py-2 text-sm text-wire-700 hover:bg-wire-50 transition-colors"
+                              >
+                                Rename
+                              </button>
+                              <button
+                                onClick={() => handleDuplicateProject(project.id, project.name)}
+                                className="w-full text-left px-4 py-2 text-sm text-wire-700 hover:bg-wire-50 transition-colors"
+                              >
+                                Duplicate
+                              </button>
+                              <div className="border-t border-wire-200" />
+                              <button
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  handleDeleteProject(project.id, project.name);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
