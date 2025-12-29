@@ -608,6 +608,7 @@ export const Publish: React.FC = () => {
   const [commentMode, setCommentMode] = useState(false);
   const [pendingComment, setPendingComment] = useState<{ component: PlacedComponent; xPct: number; yPct: number } | null>(null);
   const [showGeneralCommentsSidebar, setShowGeneralCommentsSidebar] = useState(false);
+  const [showCommentMenu, setShowCommentMenu] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -739,6 +740,32 @@ export const Publish: React.FC = () => {
     await fetchComments();
   }, [projectId, pageId, fetchComments]);
 
+  // Handle "finished adding comments" notification
+  const handleNotifyComplete = useCallback(() => {
+    if (!projectId || !project) return;
+
+    const pageUrl = `${window.location.origin}/publish/${projectId}${pageId ? `/${pageId}` : ''}`;
+    const authorName = localStorage.getItem('commentAuthorName') || '';
+    const authorEmail = localStorage.getItem('commentAuthorEmail') || '';
+    
+    // Build email content
+    const subject = encodeURIComponent(`Wireframe Comments Complete: ${project.name}`);
+    const body = encodeURIComponent(
+      `A client has finished adding comments to their wireframe.
+
+Project: ${project.name}
+Project URL: ${pageUrl}
+${authorName ? `Client: ${authorName}` : ''}
+${authorEmail ? `Email: ${authorEmail}` : ''}
+
+Please review the comments at: ${pageUrl}`
+    );
+    
+    // Open mailto link with both recipients
+    const recipients = 'simon.meek@fatbeehive.com,luke.hart@fatbeehive.com';
+    window.location.href = `mailto:${recipients}?subject=${subject}&body=${body}`;
+  }, [projectId, pageId, project]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-wire-100 flex items-center justify-center">
@@ -841,46 +868,15 @@ export const Publish: React.FC = () => {
             </svg>
           </button>
 
-          {/* Comment mode toggle */}
+          {/* Comment mode toggle - split button when active */}
           <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
-          <button
-            onClick={() => setCommentMode(!commentMode)}
-            className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors ${
-              commentMode
-                ? 'bg-blue-500 text-white border-blue-500'
-                : 'bg-wire-50 text-wire-700 border-wire-400 hover:bg-wire-300'
-            }`}
-            title={commentMode ? 'Exit comment mode' : 'Enable comment mode'}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>
-              <path d="M7 11h10"/>
-              <path d="M7 15h6"/>
-              <path d="M7 7h8"/>
-            </svg>
-          </button>
-
-          {/* General comments button (only when comment mode is active) */}
-          {commentMode && (
-            <>
-              <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
+          {commentMode ? (
+            <div className="relative flex items-center">
+              {/* Split button - main button */}
               <button
-                onClick={() => setShowGeneralCommentsSidebar(!showGeneralCommentsSidebar)}
-                className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors ${
-                  showGeneralCommentsSidebar
-                    ? 'bg-blue-500 text-white border-blue-500'
-                    : 'bg-wire-50 text-wire-700 border-wire-400 hover:bg-wire-300'
-                }`}
-                title="Add general comments"
+                onClick={() => setCommentMode(false)}
+                className="flex items-center justify-center h-9 rounded-l-full border-l border-y border-blue-500 bg-blue-500 text-white px-3 transition-colors hover:bg-blue-600"
+                title="Exit comment mode"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -892,10 +888,86 @@ export const Publish: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>
+                  <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>
+                  <path d="M7 11h10"/>
+                  <path d="M7 15h6"/>
+                  <path d="M7 7h8"/>
                 </svg>
               </button>
-            </>
+              
+              {/* Split button - dropdown trigger */}
+              <button
+                onClick={() => setShowCommentMenu(!showCommentMenu)}
+                className="flex items-center justify-center h-9 w-9 rounded-r-full border-r border-y border-blue-500 bg-blue-500 text-white transition-colors hover:bg-blue-600"
+                title="Comment options"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </button>
+
+              {/* Dropdown menu */}
+              {showCommentMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowCommentMenu(false)}
+                  />
+                  <div className="absolute right-0 top-10 z-20 bg-white border border-wire-300 rounded shadow-lg min-w-[240px]">
+                    <button
+                      onClick={() => {
+                        setShowCommentMenu(false);
+                        setShowGeneralCommentsSidebar(true);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-wire-700 hover:bg-wire-50 transition-colors"
+                    >
+                      Add General Comments
+                    </button>
+                    <div className="border-t border-wire-200" />
+                    <button
+                      onClick={() => {
+                        setShowCommentMenu(false);
+                        handleNotifyComplete();
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-wire-700 hover:bg-wire-50 transition-colors"
+                    >
+                      Let us know you've finished adding comments
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => setCommentMode(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-full border transition-colors bg-wire-50 text-wire-700 border-wire-400 hover:bg-wire-300"
+              title="Enable comment mode"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>
+                <path d="M7 11h10"/>
+                <path d="M7 15h6"/>
+                <path d="M7 7h8"/>
+              </svg>
+            </button>
           )}
 
           {/* Page tabs */}
