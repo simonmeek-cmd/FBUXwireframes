@@ -155,6 +155,13 @@ export const ClientView: React.FC = () => {
                     </Link>
                   )}
                   <button
+                    onClick={() => handleDuplicateProject(project.id, project.name)}
+                    className="px-3 py-1.5 text-sm text-wire-500 hover:text-wire-700 hover:bg-wire-100 rounded transition-colors"
+                    title="Duplicate project"
+                  >
+                    Duplicate
+                  </button>
+                  <button
                     onClick={() => handleDeleteProject(project.id, project.name)}
                     className="px-3 py-1.5 text-sm text-wire-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                   >
