@@ -845,14 +845,28 @@ export const Publish: React.FC = () => {
           <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
           <button
             onClick={() => setCommentMode(!commentMode)}
-            className={`px-3 py-1.5 text-sm rounded whitespace-nowrap transition-colors ${
+            className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors ${
               commentMode
-                ? 'bg-blue-500 text-white'
-                : 'bg-wire-100 text-wire-700 hover:bg-wire-300'
+                ? 'bg-blue-500 text-white border-blue-500'
+                : 'bg-wire-50 text-wire-700 border-wire-400 hover:bg-wire-300'
             }`}
             title={commentMode ? 'Exit comment mode' : 'Enable comment mode'}
           >
-            {commentMode ? '💬 Comment Mode ON' : '💬 Add Comments'}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>
+              <path d="M7 11h10"/>
+              <path d="M7 15h6"/>
+              <path d="M7 7h8"/>
+            </svg>
           </button>
 
           {/* General comments button (only when comment mode is active) */}
