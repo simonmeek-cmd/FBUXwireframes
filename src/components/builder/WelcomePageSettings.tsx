@@ -28,8 +28,17 @@ export const WelcomePageSettings: React.FC<WelcomePageSettingsProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setLocalConfig(config || defaultWelcomePageConfig);
-      setLogoPreview(config?.clientLogo || null);
+      // If no config exists, use default but ensure we use the current defaultIntroCopy
+      const initialConfig = config || {
+        ...defaultWelcomePageConfig,
+        introCopy: defaultIntroCopy, // Always use current default, not the one from defaultWelcomePageConfig
+      };
+      setLocalConfig(initialConfig);
+      setLogoPreview(initialConfig?.clientLogo || null);
+      // Update editor content when opening
+      if (editorRef.current) {
+        editorRef.current.innerHTML = initialConfig.introCopy || defaultIntroCopy;
+      }
     }
   }, [isOpen, config]);
 
