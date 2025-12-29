@@ -4,7 +4,7 @@ import { useBuilderStore } from '../stores/useBuilderStore';
 
 export const ClientView: React.FC = () => {
   const { clientId } = useParams<{ clientId: string }>();
-  const { getClient, getProjectsForClient, addProject, deleteProject } = useBuilderStore();
+  const { getClient, getProjectsForClient, addProject, deleteProject, duplicateProject } = useBuilderStore();
   const [newProjectName, setNewProjectName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
@@ -27,6 +27,21 @@ export const ClientView: React.FC = () => {
   const handleDeleteProject = (id: string, name: string) => {
     if (confirm(`Delete project "${name}" and all its pages?`)) {
       deleteProject(id);
+    }
+  };
+
+  const handleDuplicateProject = async (id: string, name: string) => {
+    if (!confirm(`Duplicate project "${name}"? This will create a copy with all pages and settings, but without comments.`)) {
+      return;
+    }
+
+    try {
+      const newProjectId = await duplicateProject(id);
+      // Navigate to the new project
+      window.location.href = `/project/${newProjectId}`;
+    } catch (err: any) {
+      console.error('Failed to duplicate project:', err);
+      alert('Failed to duplicate project. Please try again.');
     }
   };
 

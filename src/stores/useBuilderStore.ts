@@ -5,6 +5,7 @@ import type { FooterConfig } from '../types/footer';
 import type { WelcomePageConfig } from '../types/welcomePage';
 import { generateId } from '../types/builder';
 import { clientsApi, projectsApi, pagesApi } from '../api/client';
+import { sortPagesForDisplay } from '../utils/pageSort';
 
 interface BuilderState {
   // Data
@@ -30,6 +31,7 @@ interface BuilderState {
   addProject: (clientId: string, name: string) => Promise<void>;
   updateProject: (id: string, name: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+  duplicateProject: (projectId: string) => Promise<string>; // Returns new project ID
   
   // Page actions
   addPage: (projectId: string, name: string, type: PageType) => Promise<void>;
@@ -223,6 +225,70 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     } catch (err: any) {
       console.error('Failed to delete project:', err);
       set({ error: err.message || 'Failed to delete project' });
+      throw err;
+    }
+  },
+
+  duplicateProject: async (projectId) => {
+    try {
+      const originalProject = get().projects.find(p => p.id === projectId);
+      if (!originalProject) {
+        throw new Error('Project not found');
+      }
+
+      // Create new project with "(Copy)" suffix
+      const newProjectName = `${originalProject.name} (Copy)`;
+      const newProject = await projectsApi.create({
+        clientId: originalProject.clientId,
+        name: newProjectName,
+      });
+
+      // Copy project-level configs
+      if (originalProject.navigationConfig) {
+        await projectsApi.update(newProject.id, { navigationConfig: originalProject.navigationConfig });
+      }
+      if (originalProject.footerConfig) {
+        await projectsApi.update(newProject.id, { footerConfig: originalProject.footerConfig });
+      }
+      if (originalProject.welcomePageConfig) {
+        await projectsApi.update(newProject.id, { welcomePageConfig: originalProject.welcomePageConfig });
+      }
+      if (originalProject.activeComponents) {
+        await projectsApi.update(newProject.id, { activeComponents: originalProject.activeComponents });
+      }
+
+      // Deep clone all pages with new IDs
+      const sortedPages = sortPagesForDisplay(originalProject.pages || []);
+      for (let i = 0; i < sortedPages.length; i++) {
+        const originalPage = sortedPages[i];
+        
+        // Clone components with new IDs
+        const clonedComponents: PlacedComponent[] = originalPage.components.map((comp) => ({
+          ...comp,
+          id: generateId(),
+        }));
+
+        // Create the page
+        await pagesApi.create({
+          project_id: newProject.id,
+          name: originalPage.name,
+          type: originalPage.type,
+          components: clonedComponents,
+          order_index: i,
+        });
+      }
+
+      // Refresh projects to get the new one with pages
+      const updatedProject = await projectsApi.getById(newProject.id);
+      
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === newProject.id ? updatedProject : p)),
+      }));
+
+      return newProject.id;
+    } catch (err: any) {
+      console.error('Failed to duplicate project:', err);
+      set({ error: err.message || 'Failed to duplicate project' });
       throw err;
     }
   },

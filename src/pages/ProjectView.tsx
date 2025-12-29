@@ -24,7 +24,7 @@ const PAGE_TYPES: { value: PageType; label: string }[] = [
 
 export const ProjectView: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { getProject, getClient, addPage, deletePage, updateNavigationConfig, updateFooterConfig, updateWelcomePageConfig, updateActiveComponents } = useBuilderStore();
+  const { getProject, getClient, addPage, deletePage, updateNavigationConfig, updateFooterConfig, updateWelcomePageConfig, updateActiveComponents, duplicateProject } = useBuilderStore();
   const [newPageName, setNewPageName] = useState('');
   const [newPageType, setNewPageType] = useState<PageType>('content');
   const [isAdding, setIsAdding] = useState(false);
@@ -96,6 +96,23 @@ export const ProjectView: React.FC = () => {
   const handleExportBackup = () => {
     if (!project) return;
     exportProjectJSON(project);
+  };
+
+  const handleDuplicateProject = async () => {
+    if (!projectId || !project) return;
+    
+    if (!confirm(`Duplicate project "${project.name}"? This will create a copy with all pages and settings, but without comments.`)) {
+      return;
+    }
+
+    try {
+      const newProjectId = await duplicateProject(projectId);
+      // Navigate to the new project
+      window.location.href = `/project/${newProjectId}`;
+    } catch (err: any) {
+      console.error('Failed to duplicate project:', err);
+      alert('Failed to duplicate project. Please try again.');
+    }
   };
 
   const getPublishUrl = () => {
