@@ -35,12 +35,19 @@ export const WelcomePageSettings: React.FC<WelcomePageSettingsProps> = ({
       };
       setLocalConfig(initialConfig);
       setLogoPreview(initialConfig?.clientLogo || null);
-      // Update editor content when opening
-      if (editorRef.current) {
-        editorRef.current.innerHTML = initialConfig.introCopy || defaultIntroCopy;
-      }
     }
   }, [isOpen, config]);
+
+  // Update editor content when localConfig changes or when opening
+  useEffect(() => {
+    if (isOpen && editorRef.current) {
+      const contentToUse = localConfig.introCopy || defaultIntroCopy;
+      // Only update if different to avoid cursor jumping
+      if (editorRef.current.innerHTML !== contentToUse) {
+        editorRef.current.innerHTML = contentToUse;
+      }
+    }
+  }, [isOpen, localConfig.introCopy]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
