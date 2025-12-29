@@ -609,6 +609,8 @@ export const Publish: React.FC = () => {
   const [pendingComment, setPendingComment] = useState<{ component: PlacedComponent; xPct: number; yPct: number } | null>(null);
   const [showGeneralCommentsSidebar, setShowGeneralCommentsSidebar] = useState(false);
   const [showCommentMenu, setShowCommentMenu] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -839,7 +841,7 @@ Please review the comments at: ${pageUrl}`
     <div className="min-h-screen bg-wire-50">
       {/* Page navigation tabs + Home icon */}
       <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto items-center">
+        <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto items-center relative">
           {/* Home icon tab */}
           <button
             onClick={() => {
@@ -871,7 +873,7 @@ Please review the comments at: ${pageUrl}`
           {/* Comment mode toggle - split button when active */}
           <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
           {commentMode ? (
-            <div className="relative flex items-center">
+            <div className="relative flex items-center" style={{ zIndex: 50 }}>
               {/* Split button - main button */}
               <button
                 onClick={() => setCommentMode(false)}
@@ -897,7 +899,17 @@ Please review the comments at: ${pageUrl}`
               
               {/* Split button - dropdown trigger */}
               <button
-                onClick={() => setShowCommentMenu(!showCommentMenu)}
+                ref={dropdownButtonRef}
+                onClick={(e) => {
+                  if (dropdownButtonRef.current) {
+                    const rect = dropdownButtonRef.current.getBoundingClientRect();
+                    setDropdownPosition({
+                      top: rect.bottom + 4,
+                      right: window.innerWidth - rect.right,
+                    });
+                  }
+                  setShowCommentMenu(!showCommentMenu);
+                }}
                 className="flex items-center justify-center h-9 w-9 rounded-r-full border-r border-y border-blue-500 bg-blue-500 text-white transition-colors hover:bg-blue-600"
                 title="Comment options"
               >
@@ -916,16 +928,26 @@ Please review the comments at: ${pageUrl}`
               </button>
 
               {/* Dropdown menu */}
-              {showCommentMenu && (
+              {showCommentMenu && dropdownPosition && (
                 <>
                   <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowCommentMenu(false)}
+                    className="fixed inset-0 z-40"
+                    onClick={() => {
+                      setShowCommentMenu(false);
+                      setDropdownPosition(null);
+                    }}
                   />
-                  <div className="absolute right-0 top-10 z-20 bg-white border border-wire-300 rounded shadow-lg min-w-[240px]">
+                  <div
+                    className="fixed z-50 bg-white border border-wire-300 rounded shadow-lg min-w-[240px]"
+                    style={{
+                      top: `${dropdownPosition.top}px`,
+                      right: `${dropdownPosition.right}px`,
+                    }}
+                  >
                     <button
                       onClick={() => {
                         setShowCommentMenu(false);
+                        setDropdownPosition(null);
                         setShowGeneralCommentsSidebar(true);
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-wire-700 hover:bg-wire-50 transition-colors"
@@ -936,6 +958,7 @@ Please review the comments at: ${pageUrl}`
                     <button
                       onClick={() => {
                         setShowCommentMenu(false);
+                        setDropdownPosition(null);
                         handleNotifyComplete();
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-wire-700 hover:bg-wire-50 transition-colors"
