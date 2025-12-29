@@ -20,7 +20,10 @@ export const WelcomePageSettings: React.FC<WelcomePageSettingsProps> = ({
   onClose,
 }) => {
   const [localConfig, setLocalConfig] = useState<WelcomePageConfig>(
-    config || defaultWelcomePageConfig
+    config || {
+      ...defaultWelcomePageConfig,
+      introCopy: defaultIntroCopy, // Use current default, not the one baked into defaultWelcomePageConfig
+    }
   );
   const [logoPreview, setLogoPreview] = useState<string | null>(config?.clientLogo || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
