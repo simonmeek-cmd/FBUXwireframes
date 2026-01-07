@@ -85,7 +85,7 @@ export const handler: Handler = async (event, context) => {
             body: JSON.stringify({ ...project, pages: pages || [] }),
           };
         } else {
-          // Get all projects (optionally filtered by client_id)
+          // Get all projects (optionally filtered by client_id) with pages
           const clientId = event.queryStringParameters?.client_id;
           let query = supabase
             .from('projects')
@@ -96,14 +96,32 @@ export const handler: Handler = async (event, context) => {
             query = query.eq('client_id', clientId);
           }
 
-          const { data, error } = await query;
+          const { data: projects, error } = await query;
 
           if (error) throw error;
+
+          // Fetch pages for each project
+          const projectsWithPages = await Promise.all(
+            (projects || []).map(async (project) => {
+              const { data: pages, error: pagesError } = await supabase
+                .from('pages')
+                .select('*')
+                .eq('project_id', project.id)
+                .order('order_index', { ascending: true });
+
+              if (pagesError) {
+                console.error(`Error fetching pages for project ${project.id}:`, pagesError);
+                return { ...project, pages: [] };
+              }
+
+              return { ...project, pages: pages || [] };
+            })
+          );
 
           return {
             statusCode: 200,
             headers: { ...headers, 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
+            body: JSON.stringify(projectsWithPages),
           };
         }
 
