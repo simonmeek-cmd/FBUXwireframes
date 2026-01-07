@@ -138,14 +138,67 @@ const parseNavigationFromPDF = async (file: File): Promise<{ config: NavigationC
   }
 };
 
-// Parse image (for now, we'll extract text if possible, or provide manual entry)
+// Parse image using Netlify function + vision model
 const parseNavigationFromImage = async (file: File): Promise<{ config: NavigationConfig; error?: string }> => {
-  // For images, we can't easily extract text in the browser without OCR
-  // For now, we'll return an error suggesting they use a PDF or manually enter
-  return {
-    config: getDefaultConfig(),
-    error: 'Image parsing requires OCR which is not available in the browser. Please convert your image to PDF or manually enter the navigation structure.',
-  };
+  try {
+    // Read file as base64 so we can send it to the Netlify function
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === 'string') {
+          // result is a data URL: data:<mime>;base64,XXXX
+          const commaIndex = result.indexOf(',');
+          resolve(commaIndex >= 0 ? result.substring(commaIndex + 1) : result);
+        } else {
+          reject(new Error('Failed to read image file'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+
+    const response = await fetch('/.netlify/functions/parse-nav-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        imageBase64: base64,
+        fileName: file.name,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Image Parser] Netlify function error:', response.status, errorText);
+      return {
+        config: getDefaultConfig(),
+        error:
+          'Failed to parse navigation image. Please check that OPENAI_API_KEY is configured on Netlify and that the diagram follows the colour-coded template.',
+      };
+    }
+
+    const data = await response.json();
+    if (!data || !data.config) {
+      console.error('[Image Parser] Missing config in response:', data);
+      return {
+        config: getDefaultConfig(),
+        error: 'Image parser did not return a navigation config. Please try again.',
+      };
+    }
+
+    return {
+      config: data.config as NavigationConfig,
+    };
+  } catch (error) {
+    console.error('[Image Parser] Unexpected error:', error);
+    return {
+      config: getDefaultConfig(),
+      error:
+        'Unexpected error while parsing image. Please try again or fall back to structured text/JSON.',
+    };
+  }
 };
 
 // Parse extracted text into navigation structure
