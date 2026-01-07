@@ -2,6 +2,7 @@
 
 import type { NavigationConfig } from './navigation';
 import type { FooterConfig } from './footer';
+import type { WelcomePageConfig } from './welcomePage';
 
 export interface Client {
   id: string;
@@ -17,9 +18,23 @@ export interface Project {
   createdAt: string;
   navigationConfig?: NavigationConfig;
   footerConfig?: FooterConfig;
+  welcomePageConfig?: WelcomePageConfig;
+  /** List of active component types. If undefined, all components are active (backward compatible) */
+  activeComponents?: ComponentType[];
 }
 
-export type PageType = 'homepage' | 'content' | 'listing' | 'custom';
+export type PageType = 
+  | 'homepage' 
+  | 'content' 
+  | 'listing' 
+  | 'custom'
+  | 'news-listing'
+  | 'news-article'
+  | 'resources-listing'
+  | 'resource-detail'
+  | 'events-listing'
+  | 'event-detail'
+  | 'search-results';
 
 export interface Page {
   id: string;
@@ -67,14 +82,18 @@ export type ComponentType =
   | 'HomepageImpactOverview'
   | 'HomepageCTAs'
   | 'HomepageStats'
-  | 'HomepageContentFeed';
+  | 'HomepageContentFeed'
+  // Listing page components
+  | 'ListingPage'
+  | 'DetailPage'
+  | 'SearchResultsPage';
 
 // Component metadata for the palette
 export interface ComponentMeta {
   type: ComponentType;
   label: string;
   description: string;
-  category: 'navigation' | 'hero' | 'content' | 'media' | 'promo' | 'form' | 'info' | 'homepage';
+  category: 'navigation' | 'hero' | 'content' | 'media' | 'promo' | 'form' | 'info' | 'homepage' | 'listing';
   defaultProps: Record<string, unknown>;
 }
 
