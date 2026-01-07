@@ -93,7 +93,7 @@ export const handler: Handler = async (event) => {
                   '',
                   'Output requirements:',
                   '- Return a single JSON object that matches this TypeScript interface (keys and nesting only, types are obvious):',
-                  '  interface NavItem { label: string; href?: string; children?: NavItem[]; intro?: string }',
+                  '  interface NavItem { label: string; href?: string; children?: NavItem[]; intro?: string; stackVertically?: boolean }',
                   '  interface NavCTA { label: string; href?: string; variant: \"primary\" | \"secondary\" }',
                   '  interface NavigationConfig {',
                   '    logoText: string;',
@@ -107,8 +107,11 @@ export const handler: Handler = async (event) => {
                   '- Use the yellow boxes (top of each column) as primaryItems[].label.',
                   '- Use the green boxes below a yellow as that primary item\'s children[].label.',
                   '- Use pink boxes below a green as that child\'s children[].label (grandchildren).',
+                  '- IMPORTANT: If you see arrows (→) or right-pointing indicators next to any text, that item is a clickable link and MUST be included in the navigation structure. Do not skip items with arrows.',
+                  '- For each top-level item (yellow), if it has green children but NO pink grandchildren anywhere under it, set stackVertically: true on that top-level item. This tells the UI to stack those second-level items vertically.',
                   '- Put orange boxes into ctas[]. Use variant:\"primary\" for the most important CTA (usually Donate), variant:\"secondary\" for others.',
                   '- Set href to a kebab-case path derived from the label, e.g. \"Your care\" -> \"/your-care\". For nested items, you can still just use a single-segment path.',
+                  '- IMPORTANT: Capitalize the first letter of every label (e.g. \"deliver digital\" -> \"Deliver digital\", \"for patients\" -> \"For patients\").',
                   '- Set logoText to a short generic site name like \"Charity name\" (the app will override this later).',
                   '- Set showSecondaryNav to true and showSearch to true.',
                   '- secondaryItems can be an empty array.',
@@ -179,6 +182,45 @@ export const handler: Handler = async (event) => {
     }
 
     const config = parsedConfig as NavigationConfig;
+
+    // Post-process: Capitalize first letter of all labels and set stackVertically flag
+    const capitalizeLabel = (str: string): string => {
+      if (!str || str.length === 0) return str;
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    };
+
+    const processNavItem = (item: any): any => {
+      if (item.label) {
+        item.label = capitalizeLabel(item.label);
+      }
+      
+      // Set stackVertically flag: true if this item has children but no grandchildren
+      if (item.children && Array.isArray(item.children) && item.children.length > 0) {
+        const hasGrandchildren = item.children.some((child: any) => 
+          child.children && Array.isArray(child.children) && child.children.length > 0
+        );
+        if (!hasGrandchildren) {
+          item.stackVertically = true;
+        }
+        item.children = item.children.map(processNavItem);
+      }
+      
+      return item;
+    };
+
+    // Process all navigation items
+    if (config.primaryItems) {
+      config.primaryItems = config.primaryItems.map(processNavItem);
+    }
+    if (config.secondaryItems) {
+      config.secondaryItems = config.secondaryItems.map(processNavItem);
+    }
+    if (config.ctas) {
+      config.ctas = config.ctas.map((cta: any) => ({
+        ...cta,
+        label: capitalizeLabel(cta.label || ''),
+      }));
+    }
 
     return {
       statusCode: 200,

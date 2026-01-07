@@ -6,6 +6,8 @@ export interface NavItem {
   children?: NavItem[];
   /** Optional intro copy shown in the mega menu for this section (top-level items only) */
   intro?: string;
+  /** If true, stack children vertically instead of horizontally (when no third-level items exist) */
+  stackVertically?: boolean;
 }
 
 export interface NavCTA {

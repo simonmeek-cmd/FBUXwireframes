@@ -46,7 +46,9 @@ const MegaMenuDropdown: React.FC<{
   if (!item.children || item.children.length === 0) return null;
 
   // Check if any children have grandchildren (determines layout)
+  // Also check if stackVertically flag is set (explicit override)
   const hasAnyGrandchildren = item.children.some(child => child.children && child.children.length > 0);
+  const shouldStackVertically = item.stackVertically === true || (!hasAnyGrandchildren && item.children && item.children.length > 0);
 
   return (
     <div className="bg-white border-t border-wire-200 shadow-lg">
@@ -60,7 +62,7 @@ const MegaMenuDropdown: React.FC<{
           )}
 
           {/* Menu content */}
-          {hasAnyGrandchildren ? (
+          {!shouldStackVertically && hasAnyGrandchildren ? (
             // Horizontal layout with columns when there are grandchildren
             <div className="flex-1 flex gap-8">
               {item.children.map((child, idx) => (
@@ -304,14 +306,20 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
 
   // Check if ANY item in the nav has grandchildren (determines if we use mega menu for all)
   const anyItemHasGrandchildren = config.primaryItems.some(item => hasGrandchildren(item));
+  
+  // Check if ANY item has children (needed for mega menu to show even if no grandchildren)
+  const anyItemHasChildren = config.primaryItems.some(item => item.children && item.children.length > 0);
 
   // Get the active menu item
   const activeMenuItem = activeDropdown !== null 
     ? config.primaryItems[activeDropdown] 
     : null;
 
-  // Show mega menu if we're in 3-tier mode and there's an active item with children
-  const showMegaMenu = anyItemHasGrandchildren && activeMenuItem && activeMenuItem.children && activeMenuItem.children.length > 0;
+  // Show mega menu if:
+  // 1. Any item has grandchildren (3-tier mode), OR
+  // 2. Any item has children (2-tier mode with potential vertical stacking)
+  // AND there's an active item with children
+  const showMegaMenu = (anyItemHasGrandchildren || anyItemHasChildren) && activeMenuItem && activeMenuItem.children && activeMenuItem.children.length > 0;
 
   return (
     <>
@@ -385,7 +393,7 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
                       onMouseEnter={() => setActiveDropdown(idx)}
                       onMouseLeave={() => {
                         // Only clear if not using mega menu (mega menu handles its own leave)
-                        if (!anyItemHasGrandchildren) {
+                        if (!anyItemHasGrandchildren && !anyItemHasChildren) {
                           setActiveDropdown(null);
                         }
                       }}
