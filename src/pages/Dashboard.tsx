@@ -10,18 +10,28 @@ export const Dashboard: React.FC = () => {
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddClient = (e: React.FormEvent) => {
+  const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newClientName.trim()) {
-      addClient(newClientName.trim());
-      setNewClientName('');
-      setIsAdding(false);
+      try {
+        await addClient(newClientName.trim());
+        setNewClientName('');
+        setIsAdding(false);
+      } catch (error) {
+        console.error('Failed to add client:', error);
+        alert('Failed to add client. Please try again.');
+      }
     }
   };
 
-  const handleDeleteClient = (id: string, name: string) => {
+  const handleDeleteClient = async (id: string, name: string) => {
     if (confirm(`Delete client "${name}" and all their projects?`)) {
-      deleteClient(id);
+      try {
+        await deleteClient(id);
+      } catch (error) {
+        console.error('Failed to delete client:', error);
+        alert('Failed to delete client. Please try again.');
+      }
     }
   };
 

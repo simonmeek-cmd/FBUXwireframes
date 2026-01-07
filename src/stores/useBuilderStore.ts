@@ -5,7 +5,7 @@ import type { FooterConfig } from '../types/footer';
 import type { WelcomePageConfig } from '../types/welcomePage';
 import { generateId } from '../types/builder';
 import { loadClients, saveClients, loadProjects, saveProjects } from '../utils/storage';
-import { projectsApi, pagesApi } from '../api/client';
+import { clientsApi, projectsApi, pagesApi } from '../api/client';
 import { sortPagesForDisplay } from '../utils/pageSort';
 
 interface BuilderState {
@@ -21,9 +21,9 @@ interface BuilderState {
   selectedComponentId: string | null;
   
   // Client actions
-  addClient: (name: string) => void;
-  updateClient: (id: string, name: string) => void;
-  deleteClient: (id: string) => void;
+  addClient: (name: string) => Promise<void>;
+  updateClient: (id: string, name: string) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
   
   // Project actions
   addProject: (clientId: string, name: string) => void;
@@ -68,7 +68,7 @@ interface BuilderState {
   getProjectsForClient: (clientId: string) => Project[];
   
   // Initialization
-  initialize: () => void;
+  initialize: () => Promise<void>;
 }
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
@@ -81,46 +81,66 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   selectedPageId: null,
   selectedComponentId: null,
   
-  // Initialize from localStorage
-  initialize: () => {
-    set({
-      clients: loadClients(),
-      projects: loadProjects(),
-    });
+  // Initialize from API
+  initialize: async () => {
+    set({ loading: true });
+    try {
+      const [clientsData, projectsData] = await Promise.all([
+        clientsApi.getAll(),
+        projectsApi.getAll(),
+      ]);
+      set({
+        clients: clientsData,
+        projects: projectsData,
+        loading: false,
+      });
+    } catch (error) {
+      console.error('Failed to initialize store:', error);
+      set({ loading: false });
+      // Fallback to empty arrays on error
+      set({
+        clients: [],
+        projects: [],
+      });
+    }
   },
   
   // Client actions
-  addClient: (name) => {
-    const newClient: Client = {
-      id: generateId(),
-      name,
-      createdAt: new Date().toISOString(),
-    };
-    set((state) => {
-      const clients = [...state.clients, newClient];
-      saveClients(clients);
-      return { clients };
-    });
+  addClient: async (name) => {
+    try {
+      const newClient = await clientsApi.create({ name });
+      set((state) => ({
+        clients: [...state.clients, newClient],
+      }));
+    } catch (error) {
+      console.error('Failed to add client:', error);
+      throw error;
+    }
   },
   
-  updateClient: (id, name) => {
-    set((state) => {
-      const clients = state.clients.map((c) =>
-        c.id === id ? { ...c, name } : c
-      );
-      saveClients(clients);
-      return { clients };
-    });
+  updateClient: async (id, name) => {
+    try {
+      const updatedClient = await clientsApi.update(id, { name });
+      set((state) => ({
+        clients: state.clients.map((c) => (c.id === id ? updatedClient : c)),
+      }));
+    } catch (error) {
+      console.error('Failed to update client:', error);
+      throw error;
+    }
   },
   
-  deleteClient: (id) => {
-    set((state) => {
-      const clients = state.clients.filter((c) => c.id !== id);
-      const projects = state.projects.filter((p) => p.clientId !== id);
-      saveClients(clients);
-      saveProjects(projects);
-      return { clients, projects };
-    });
+  deleteClient: async (id) => {
+    try {
+      await clientsApi.delete(id);
+      set((state) => ({
+        clients: state.clients.filter((c) => c.id !== id),
+        projects: state.projects.filter((p) => p.clientId !== id),
+      }));
+    } catch (error) {
+      console.error('Failed to delete client:', error);
+      throw error;
+    }
   },
   
   // Project actions

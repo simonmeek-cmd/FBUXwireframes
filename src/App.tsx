@@ -28,7 +28,7 @@ function AppContent() {
       
       const session = await getCurrentSession();
       if (session) {
-        initialize();
+        await initialize();
       }
     };
     initIfAuthenticated();
