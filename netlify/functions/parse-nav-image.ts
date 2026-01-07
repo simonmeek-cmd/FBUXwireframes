@@ -80,14 +80,20 @@ export const handler: Handler = async (event) => {
                 text: [
                   'You are given a screenshot of a navigation map exported from Miro.',
                   '',
+                  'IMPORTANT: Look for a charity name at the top of the diagram (e.g., "Charity name: Westfield Hospice" or just "Westfield Hospice"). Extract this and use it as logoText.',
+                  '',
                   'Colour semantics:',
-                  '- Yellow boxes: TOP-LEVEL navigation items (primary menu).',
+                  '- Yellow boxes in SECONDARY NAVIGATION section: Secondary navigation items (utility links like "Your stories", "Shop with us", "Work for us", "Contact us", "Login", etc.).',
+                  '- Yellow boxes in PRIMARY NAVIGATION section: TOP-LEVEL navigation items (primary menu).',
                   '- Green boxes: SECOND-LEVEL items directly under the yellow item above them in the same column.',
                   '- Pink boxes: THIRD-LEVEL items directly under the green item above them in the same column.',
                   '- Orange boxes: CTA buttons (global calls-to-action), not part of the tree, usually labels like Donate, Refer, etc.',
+                  '- Grey boxes: Usually represent search functionality.',
                   '',
                   'Layout semantics:',
-                  '- Each vertical column represents one top-level section.',
+                  '- The diagram is typically divided into sections: "Secondary navigation" and "Primary navigation".',
+                  '- Secondary navigation items are usually in a horizontal row at the top, before the primary navigation.',
+                  '- Each vertical column in the primary navigation represents one top-level section.',
                   '- Within a column, items are ordered from top to bottom.',
                   '- Lines/arrows (if any) only reinforce the vertical hierarchy; you can rely primarily on colour and vertical grouping.',
                   '',
@@ -104,17 +110,20 @@ export const handler: Handler = async (event) => {
                   '    ctas: NavCTA[];',
                   '  }',
                   '',
-                  '- Use the yellow boxes (top of each column) as primaryItems[].label.',
+                  '- Extract the charity name from the top of the diagram and use it as logoText. If not found, use "Charity name".',
+                  '- Yellow boxes in the SECONDARY NAVIGATION section should go into secondaryItems[].',
+                  '- If you see a grey box labeled "search" or similar in the secondary nav area, set showSearch to true.',
+                  '- Yellow boxes in PRIMARY NAVIGATION (top of each column) should go into primaryItems[].label.',
                   '- Use the green boxes below a yellow as that primary item\'s children[].label.',
                   '- Use pink boxes below a green as that child\'s children[].label (grandchildren).',
                   '- IMPORTANT: If you see arrows (→) or right-pointing indicators next to any text, that item is a clickable link and MUST be included in the navigation structure. Do not skip items with arrows.',
                   '- For each top-level item (yellow), if it has green children but NO pink grandchildren anywhere under it, set stackVertically: true on that top-level item. This tells the UI to stack those second-level items vertically.',
-                  '- Put orange boxes into ctas[]. Use variant:\"primary\" for the most important CTA (usually Donate), variant:\"secondary\" for others.',
-                  '- Set href to a kebab-case path derived from the label, e.g. \"Your care\" -> \"/your-care\". For nested items, you can still just use a single-segment path.',
-                  '- IMPORTANT: Capitalize the first letter of every label (e.g. \"deliver digital\" -> \"Deliver digital\", \"for patients\" -> \"For patients\").',
-                  '- Set logoText to a short generic site name like \"Charity name\" (the app will override this later).',
-                  '- Set showSecondaryNav to true and showSearch to true.',
-                  '- secondaryItems can be an empty array.',
+                  '- Put orange boxes into ctas[].',
+                  '- For CTAs: If the label contains "[Primary]" or "[primary]" (case-insensitive), use variant:\"primary\" and remove the "[Primary]" text from the label. Otherwise, use variant:\"secondary\".',
+                  '- Set href to a kebab-case path derived from the label, e.g. "Your care" -> "/your-care". For nested items, you can still just use a single-segment path.',
+                  '- IMPORTANT: Capitalize the first letter of every label (e.g. "deliver digital" -> "Deliver digital", "for patients" -> "For patients").',
+                  '- Set showSecondaryNav to true if there are any secondary navigation items, otherwise false.',
+                  '- Set showSearch to true if you see a search box/indicator in the secondary nav area, otherwise false.',
                   '',
                   'Important:',
                   '- Your response MUST be just the JSON object, no backticks, no explanation.',
@@ -183,7 +192,7 @@ export const handler: Handler = async (event) => {
 
     const config = parsedConfig as NavigationConfig;
 
-    // Post-process: Capitalize first letter of all labels and set stackVertically flag
+    // Post-process: Capitalize first letter of all labels, set stackVertically flag, and clean up CTA labels
     const capitalizeLabel = (str: string): string => {
       if (!str || str.length === 0) return str;
       return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -216,10 +225,24 @@ export const handler: Handler = async (event) => {
       config.secondaryItems = config.secondaryItems.map(processNavItem);
     }
     if (config.ctas) {
-      config.ctas = config.ctas.map((cta: any) => ({
-        ...cta,
-        label: capitalizeLabel(cta.label || ''),
-      }));
+      config.ctas = config.ctas.map((cta: any) => {
+        let label = cta.label || '';
+        let variant = cta.variant || 'secondary';
+        
+        // Check for [Primary] or [primary] in the label
+        const primaryMatch = label.match(/\[primary\]/i);
+        if (primaryMatch) {
+          variant = 'primary';
+          // Remove [Primary] or [primary] from the label
+          label = label.replace(/\[primary\]/gi, '').trim();
+        }
+        
+        return {
+          ...cta,
+          label: capitalizeLabel(label),
+          variant: variant as 'primary' | 'secondary',
+        };
+      });
     }
 
     return {
