@@ -9,7 +9,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "netlify": "netlify"
+    "netlify": "netlify",
+    "validate:projects-api": "tsx scripts/validate-projects-api.ts",
+    "pre-push": "npm run validate:projects-api"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -40,8 +42,10 @@
     "netlify-cli": "^23.12.3",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
+    "tsx": "^4.21.0",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.11.0",
+    "tsx": "^4.19.2",
     "vite": "^5.4.10"
   }
 }
