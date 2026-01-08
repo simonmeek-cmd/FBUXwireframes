@@ -648,6 +648,21 @@ export const Publish: React.FC = () => {
     fetchProject();
   }, [projectId]);
 
+  // Update page title when project loads
+  useEffect(() => {
+    if (project && project.clientName) {
+      document.title = `Wireframes | ${project.clientName} | ${project.name}`;
+    } else if (project) {
+      document.title = `Wireframes | ${project.name}`;
+    } else {
+      document.title = 'Wireframe Components';
+    }
+    // Cleanup: reset title when component unmounts
+    return () => {
+      document.title = 'Wireframe Components';
+    };
+  }, [project]);
+
   // Fetch comments when projectId or pageId changes
   const fetchComments = useCallback(async () => {
     if (!projectId) return;
