@@ -306,20 +306,15 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
 
   // Check if ANY item in the nav has grandchildren (determines if we use mega menu for all)
   const anyItemHasGrandchildren = config.primaryItems.some(item => hasGrandchildren(item));
-  
-  // Check if ANY item has children (needed for mega menu to show even if no grandchildren)
-  const anyItemHasChildren = config.primaryItems.some(item => item.children && item.children.length > 0);
 
   // Get the active menu item
   const activeMenuItem = activeDropdown !== null 
     ? config.primaryItems[activeDropdown] 
     : null;
 
-  // Show mega menu if:
-  // 1. Any item has grandchildren (3-tier mode), OR
-  // 2. Any item has children (2-tier mode with potential vertical stacking)
-  // AND there's an active item with children
-  const showMegaMenu = (anyItemHasGrandchildren || anyItemHasChildren) && activeMenuItem && activeMenuItem.children && activeMenuItem.children.length > 0;
+  // Show mega menu ONLY if any item has grandchildren (3-tier mode)
+  // For 2-tier nav, use SimpleDropdown instead
+  const showMegaMenu = anyItemHasGrandchildren && activeMenuItem && activeMenuItem.children && activeMenuItem.children.length > 0;
 
   return (
     <>
@@ -393,7 +388,7 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
                       onMouseEnter={() => setActiveDropdown(idx)}
                       onMouseLeave={() => {
                         // Only clear if not using mega menu (mega menu handles its own leave)
-                        if (!anyItemHasGrandchildren && !anyItemHasChildren) {
+                        if (!anyItemHasGrandchildren) {
                           setActiveDropdown(null);
                         }
                       }}
