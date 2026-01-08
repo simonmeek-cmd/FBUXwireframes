@@ -46,9 +46,9 @@ const MegaMenuDropdown: React.FC<{
   if (!item.children || item.children.length === 0) return null;
 
   // Check if any children have grandchildren (determines layout)
-  // Also check if stackVertically flag is set (explicit override)
+  // stackVertically flag only applies when there are NO grandchildren
   const hasAnyGrandchildren = item.children.some(child => child.children && child.children.length > 0);
-  const shouldStackVertically = item.stackVertically === true || (!hasAnyGrandchildren && item.children && item.children.length > 0);
+  const shouldStackVertically = item.stackVertically === true && !hasAnyGrandchildren;
 
   return (
     <div className="bg-white border-t border-wire-200 shadow-lg">
