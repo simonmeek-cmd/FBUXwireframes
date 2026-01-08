@@ -41,19 +41,29 @@ export const ProjectView: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
-  const handleAddPage = (e: React.FormEvent) => {
+  const handleAddPage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPageName.trim() && projectId) {
-      addPage(projectId, newPageName.trim(), newPageType);
-      setNewPageName('');
-      setNewPageType('content');
-      setIsAdding(false);
+      try {
+        await addPage(projectId, newPageName.trim(), newPageType);
+        setNewPageName('');
+        setNewPageType('content');
+        setIsAdding(false);
+      } catch (error) {
+        console.error('Failed to add page:', error);
+        alert('Failed to add page. Please try again.');
+      }
     }
   };
 
-  const handleDeletePage = (pageId: string, pageName: string) => {
+  const handleDeletePage = async (pageId: string, pageName: string) => {
     if (confirm(`Delete page "${pageName}"?`)) {
-      deletePage(projectId!, pageId);
+      try {
+        await deletePage(projectId!, pageId);
+      } catch (error) {
+        console.error('Failed to delete page:', error);
+        alert('Failed to delete page. Please try again.');
+      }
     }
   };
 

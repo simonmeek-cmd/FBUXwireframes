@@ -32,9 +32,9 @@ interface BuilderState {
   duplicateProject: (projectId: string) => Promise<string>;
   
   // Page actions
-  addPage: (projectId: string, name: string, type: PageType) => void;
-  updatePage: (projectId: string, pageId: string, updates: Partial<Pick<Page, 'name' | 'type'>>) => void;
-  deletePage: (projectId: string, pageId: string) => void;
+  addPage: (projectId: string, name: string, type: PageType) => Promise<void>;
+  updatePage: (projectId: string, pageId: string, updates: Partial<Pick<Page, 'name' | 'type'>>) => Promise<void>;
+  deletePage: (projectId: string, pageId: string) => Promise<void>;
   
   // Navigation config actions
   updateNavigationConfig: (projectId: string, config: NavigationConfig) => void;
@@ -241,49 +241,103 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   },
   
   // Page actions
-  addPage: (projectId, name, type) => {
-    const newPage: Page = {
-      id: generateId(),
-      name,
-      type,
-      components: [],
-    };
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId ? { ...p, pages: [...p.pages, newPage] } : p
-      );
-      saveProjects(projects);
-      return { projects };
-    });
+  addPage: async (projectId, name, type) => {
+    try {
+      const project = get().getProject(projectId);
+      if (!project) throw new Error('Project not found');
+
+      // Get current page count for order_index
+      const currentPageCount = project.pages.length;
+
+      // Create the main page
+      const newPage = await pagesApi.create({
+        project_id: projectId,
+        name,
+        type,
+        components: [],
+        order_index: currentPageCount,
+      });
+
+      // Handle paired pages (listing pages that need a detail page)
+      let detailPage: Page | null = null;
+      if (type === 'news-listing') {
+        detailPage = await pagesApi.create({
+          project_id: projectId,
+          name: `${name} Article`,
+          type: 'news-article',
+          components: [],
+          order_index: currentPageCount + 1,
+        });
+      } else if (type === 'resources-listing') {
+        detailPage = await pagesApi.create({
+          project_id: projectId,
+          name: `${name} Resource`,
+          type: 'resource-detail',
+          components: [],
+          order_index: currentPageCount + 1,
+        });
+      } else if (type === 'events-listing') {
+        detailPage = await pagesApi.create({
+          project_id: projectId,
+          name: `${name} Event`,
+          type: 'event-detail',
+          components: [],
+          order_index: currentPageCount + 1,
+        });
+      }
+
+      // Refresh project to get updated pages
+      const updatedProject = await projectsApi.getById(projectId);
+
+      // Update local state
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === projectId ? updatedProject : p)),
+      }));
+    } catch (error) {
+      console.error('Failed to add page:', error);
+      throw error;
+    }
   },
   
-  updatePage: (projectId, pageId, updates) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              pages: p.pages.map((page) =>
-                page.id === pageId ? { ...page, ...updates } : page
-              ),
-            }
-          : p
-      );
-      saveProjects(projects);
-      return { projects };
-    });
+  updatePage: async (projectId, pageId, updates) => {
+    try {
+      await pagesApi.update(pageId, updates);
+      
+      // Update local state
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                pages: p.pages.map((page) =>
+                  page.id === pageId ? { ...page, ...updates } : page
+                ),
+              }
+            : p
+        );
+        return { projects };
+      });
+    } catch (error) {
+      console.error('Failed to update page:', error);
+      throw error;
+    }
   },
   
-  deletePage: (projectId, pageId) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId
-          ? { ...p, pages: p.pages.filter((page) => page.id !== pageId) }
-          : p
-      );
-      saveProjects(projects);
-      return { projects };
-    });
+  deletePage: async (projectId, pageId) => {
+    try {
+      await pagesApi.delete(pageId);
+      
+      // Refresh project to get updated pages
+      const updatedProject = await projectsApi.getById(projectId);
+
+      // Update local state
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === projectId ? updatedProject : p)),
+      }));
+    } catch (error) {
+      console.error('Failed to delete page:', error);
+      throw error;
+    }
   },
   
   // Navigation config actions
