@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { useBuilderStore } from '../stores/useBuilderStore';
 
@@ -13,6 +13,18 @@ export const ClientView: React.FC = () => {
 
   const client = clientId ? getClient(clientId) : undefined;
   const projects = clientId ? getProjectsForClient(clientId) : [];
+
+  // Update page title
+  useEffect(() => {
+    if (client) {
+      document.title = `FBUX | ${client.name}`;
+    } else {
+      document.title = 'FBUX';
+    }
+    return () => {
+      document.title = 'FBUX';
+    };
+  }, [client]);
 
   if (!client) {
     return <Navigate to="/" replace />;

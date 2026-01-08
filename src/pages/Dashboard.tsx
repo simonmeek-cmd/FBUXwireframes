@@ -5,6 +5,14 @@ import { exportAllDataJSON } from '../utils/exportStaticSite';
 
 export const Dashboard: React.FC = () => {
   const { clients, projects, addClient, deleteClient, initialize, loading } = useBuilderStore();
+
+  // Update page title
+  useEffect(() => {
+    document.title = 'FBUX';
+    return () => {
+      document.title = 'FBUX';
+    };
+  }, []);
   const [newClientName, setNewClientName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);

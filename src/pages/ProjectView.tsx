@@ -39,6 +39,20 @@ export const ProjectView: React.FC = () => {
   const project = projectId ? getProject(projectId) : undefined;
   const client = project ? getClient(project.clientId) : undefined;
 
+  // Update page title
+  useEffect(() => {
+    if (client && project) {
+      document.title = `FBUX | ${client.name} | ${project.name}`;
+    } else if (project) {
+      document.title = `FBUX | ${project.name}`;
+    } else {
+      document.title = 'FBUX';
+    }
+    return () => {
+      document.title = 'FBUX';
+    };
+  }, [client, project]);
+
   if (!project) {
     return <Navigate to="/" replace />;
   }
