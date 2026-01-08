@@ -250,7 +250,7 @@ export const ProjectView: React.FC = () => {
                 <button
                   onClick={() => setShowPublishMenu(!showPublishMenu)}
                   disabled={project.pages.length === 0}
-                  className="px-2 py-2 bg-green-600 text-white rounded-r border-l border-green-700 hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2 py-2 h-[42px] bg-green-600 text-white rounded-r border-l border-green-700 hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   title="More options"
                 >
                   <svg
