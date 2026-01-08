@@ -41,6 +41,20 @@ export const PageBuilder: React.FC = () => {
   const client = project ? getClient(project.clientId) : undefined;
   const page = projectId && pageId ? getPage(projectId, pageId) : undefined;
 
+  // Update page title
+  useEffect(() => {
+    if (client && project) {
+      document.title = `FBUX | ${client.name} | ${project.name}`;
+    } else if (project) {
+      document.title = `FBUX | ${project.name}`;
+    } else {
+      document.title = 'FBUX';
+    }
+    return () => {
+      document.title = 'FBUX';
+    };
+  }, [client, project]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
