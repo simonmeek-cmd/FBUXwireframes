@@ -49,11 +49,11 @@ interface BuilderState {
   updateActiveComponents: (projectId: string, activeComponents: ComponentType[]) => void;
   
   // Component actions
-  addComponent: (projectId: string, pageId: string, component: Omit<PlacedComponent, 'id' | 'order'>) => void;
-  updateComponent: (projectId: string, pageId: string, componentId: string, props: Record<string, unknown>) => void;
-  updateComponentHelpText: (projectId: string, pageId: string, componentId: string, helpText: string) => void;
-  deleteComponent: (projectId: string, pageId: string, componentId: string) => void;
-  reorderComponents: (projectId: string, pageId: string, componentIds: string[]) => void;
+  addComponent: (projectId: string, pageId: string, component: Omit<PlacedComponent, 'id' | 'order'>) => Promise<void>;
+  updateComponent: (projectId: string, pageId: string, componentId: string, props: Record<string, unknown>) => Promise<void>;
+  updateComponentHelpText: (projectId: string, pageId: string, componentId: string, helpText: string) => Promise<void>;
+  deleteComponent: (projectId: string, pageId: string, componentId: string) => Promise<void>;
+  reorderComponents: (projectId: string, pageId: string, componentIds: string[]) => Promise<void>;
   
   // Selection actions
   selectClient: (id: string | null) => void;
@@ -341,124 +341,172 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   },
   
   // Component actions
-  addComponent: (projectId, pageId, component) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              pages: p.pages.map((page) => {
-                if (page.id !== pageId) return page;
-                const newComponent: PlacedComponent = {
-                  ...component,
-                  id: generateId(),
-                  order: page.components.length,
-                };
-                return { ...page, components: [...page.components, newComponent] };
-              }),
-            }
-          : p
-      );
-      saveProjects(projects);
-      return { projects };
-    });
+  addComponent: async (projectId, pageId, component) => {
+    try {
+      const page = get().getPage(projectId, pageId);
+      if (!page) throw new Error('Page not found');
+
+      const newComponent: PlacedComponent = {
+        ...component,
+        id: generateId(),
+        order: page.components.length,
+      };
+
+      const updatedComponents = [...page.components, newComponent];
+
+      // Save to API
+      await pagesApi.update(pageId, { components: updatedComponents });
+
+      // Update local state
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                pages: p.pages.map((pg) =>
+                  pg.id === pageId ? { ...pg, components: updatedComponents } : pg
+                ),
+              }
+            : p
+        );
+        return { projects };
+      });
+    } catch (error) {
+      console.error('Failed to add component:', error);
+      throw error;
+    }
   },
   
-  updateComponent: (projectId, pageId, componentId, props) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              pages: p.pages.map((page) =>
-                page.id === pageId
-                  ? {
-                      ...page,
-                      components: page.components.map((c) =>
-                        c.id === componentId ? { ...c, props: { ...c.props, ...props } } : c
-                      ),
-                    }
-                  : page
-              ),
-            }
-          : p
+  updateComponent: async (projectId, pageId, componentId, props) => {
+    try {
+      const page = get().getPage(projectId, pageId);
+      if (!page) throw new Error('Page not found');
+
+      const updatedComponents = page.components.map((c) =>
+        c.id === componentId ? { ...c, props: { ...c.props, ...props } } : c
       );
-      saveProjects(projects);
-      return { projects };
-    });
+
+      // Save to API
+      await pagesApi.update(pageId, { components: updatedComponents });
+
+      // Update local state
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                pages: p.pages.map((pg) =>
+                  pg.id === pageId ? { ...pg, components: updatedComponents } : pg
+                ),
+              }
+            : p
+        );
+        return { projects };
+      });
+    } catch (error) {
+      console.error('Failed to update component:', error);
+      throw error;
+    }
   },
   
-  updateComponentHelpText: (projectId, pageId, componentId, helpText) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              pages: p.pages.map((page) =>
-                page.id === pageId
-                  ? {
-                      ...page,
-                      components: page.components.map((c) =>
-                        c.id === componentId ? { ...c, helpText } : c
-                      ),
-                    }
-                  : page
-              ),
-            }
-          : p
+  updateComponentHelpText: async (projectId, pageId, componentId, helpText) => {
+    try {
+      const page = get().getPage(projectId, pageId);
+      if (!page) throw new Error('Page not found');
+
+      const updatedComponents = page.components.map((c) =>
+        c.id === componentId ? { ...c, helpText } : c
       );
-      saveProjects(projects);
-      return { projects };
-    });
+
+      // Save to API
+      await pagesApi.update(pageId, { components: updatedComponents });
+
+      // Update local state
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                pages: p.pages.map((pg) =>
+                  pg.id === pageId ? { ...pg, components: updatedComponents } : pg
+                ),
+              }
+            : p
+        );
+        return { projects };
+      });
+    } catch (error) {
+      console.error('Failed to update component help text:', error);
+      throw error;
+    }
   },
   
-  deleteComponent: (projectId, pageId, componentId) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              pages: p.pages.map((page) =>
-                page.id === pageId
-                  ? {
-                      ...page,
-                      components: page.components
-                        .filter((c) => c.id !== componentId)
-                        .map((c, i) => ({ ...c, order: i })),
-                    }
-                  : page
-              ),
-            }
-          : p
-      );
-      saveProjects(projects);
-      return { projects, selectedComponentId: null };
-    });
+  deleteComponent: async (projectId, pageId, componentId) => {
+    try {
+      const page = get().getPage(projectId, pageId);
+      if (!page) throw new Error('Page not found');
+
+      const updatedComponents = page.components
+        .filter((c) => c.id !== componentId)
+        .map((c, i) => ({ ...c, order: i }));
+
+      // Save to API
+      await pagesApi.update(pageId, { components: updatedComponents });
+
+      // Update local state
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                pages: p.pages.map((pg) =>
+                  pg.id === pageId ? { ...pg, components: updatedComponents } : pg
+                ),
+              }
+            : p
+        ),
+        selectedComponentId: state.selectedComponentId === componentId ? null : state.selectedComponentId,
+      }));
+    } catch (error) {
+      console.error('Failed to delete component:', error);
+      throw error;
+    }
   },
   
-  reorderComponents: (projectId, pageId, componentIds) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              pages: p.pages.map((page) => {
-                if (page.id !== pageId) return page;
-                const componentMap = new Map(page.components.map((c) => [c.id, c]));
-                const reordered = componentIds
-                  .map((id, index) => {
-                    const comp = componentMap.get(id);
-                    return comp ? { ...comp, order: index } : null;
-                  })
-                  .filter((c): c is PlacedComponent => c !== null);
-                return { ...page, components: reordered };
-              }),
-            }
-          : p
-      );
-      saveProjects(projects);
-      return { projects };
-    });
+  reorderComponents: async (projectId, pageId, componentIds) => {
+    try {
+      const page = get().getPage(projectId, pageId);
+      if (!page) throw new Error('Page not found');
+
+      const componentMap = new Map(page.components.map((c) => [c.id, c]));
+      const reordered = componentIds
+        .map((id, index) => {
+          const comp = componentMap.get(id);
+          return comp ? { ...comp, order: index } : null;
+        })
+        .filter((c): c is PlacedComponent => c !== null);
+
+      // Save to API
+      await pagesApi.update(pageId, { components: reordered });
+
+      // Update local state
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                pages: p.pages.map((pg) =>
+                  pg.id === pageId ? { ...pg, components: reordered } : pg
+                ),
+              }
+            : p
+        );
+        return { projects };
+      });
+    } catch (error) {
+      console.error('Failed to reorder components:', error);
+      throw error;
+    }
   },
   
   // Selection actions

@@ -85,6 +85,9 @@ export const PageBuilder: React.FC = () => {
       addComponent(projectId!, pageId!, {
         type: componentType,
         props: activeData.defaultProps || {},
+      }).catch((error) => {
+        console.error('Failed to add component:', error);
+        alert('Failed to add component. Please try again.');
       });
       return;
     }
@@ -100,7 +103,10 @@ export const PageBuilder: React.FC = () => {
           oldIndex,
           newIndex
         );
-        reorderComponents(projectId!, pageId!, newOrder);
+        reorderComponents(projectId!, pageId!, newOrder).catch((error) => {
+          console.error('Failed to reorder components:', error);
+          alert('Failed to reorder components. Please try again.');
+        });
       }
     }
   };
@@ -119,7 +125,10 @@ export const PageBuilder: React.FC = () => {
 
   const handleDeleteComponent = (componentId: string) => {
     if (projectId && pageId) {
-      deleteComponent(projectId, pageId, componentId);
+      deleteComponent(projectId, pageId, componentId).catch((error) => {
+        console.error('Failed to delete component:', error);
+        alert('Failed to delete component. Please try again.');
+      });
     }
   };
 
