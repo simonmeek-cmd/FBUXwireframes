@@ -26,9 +26,9 @@ interface BuilderState {
   deleteClient: (id: string) => Promise<void>;
   
   // Project actions
-  addProject: (clientId: string, name: string) => void;
-  updateProject: (id: string, name: string) => void;
-  deleteProject: (id: string) => void;
+  addProject: (clientId: string, name: string) => Promise<void>;
+  updateProject: (id: string, name: string) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
   duplicateProject: (projectId: string) => Promise<string>;
   
   // Page actions
@@ -144,37 +144,43 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   },
   
   // Project actions
-  addProject: (clientId, name) => {
-    const newProject: Project = {
-      id: generateId(),
-      clientId,
-      name,
-      pages: [],
-      createdAt: new Date().toISOString(),
-    };
-    set((state) => {
-      const projects = [...state.projects, newProject];
-      saveProjects(projects);
-      return { projects };
-    });
+  addProject: async (clientId, name) => {
+    try {
+      const newProject = await projectsApi.create({
+        client_id: clientId,
+        name,
+      });
+      set((state) => ({
+        projects: [...state.projects, newProject],
+      }));
+    } catch (error) {
+      console.error('Failed to add project:', error);
+      throw error;
+    }
   },
   
-  updateProject: (id, name) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === id ? { ...p, name } : p
-      );
-      saveProjects(projects);
-      return { projects };
-    });
+  updateProject: async (id, name) => {
+    try {
+      const updatedProject = await projectsApi.update(id, { name });
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === id ? updatedProject : p)),
+      }));
+    } catch (error) {
+      console.error('Failed to update project:', error);
+      throw error;
+    }
   },
   
-  deleteProject: (id) => {
-    set((state) => {
-      const projects = state.projects.filter((p) => p.id !== id);
-      saveProjects(projects);
-      return { projects };
-    });
+  deleteProject: async (id) => {
+    try {
+      await projectsApi.delete(id);
+      set((state) => ({
+        projects: state.projects.filter((p) => p.id !== id),
+      }));
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      throw error;
+    }
   },
 
   duplicateProject: async (projectId: string): Promise<string> => {

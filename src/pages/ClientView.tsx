@@ -30,12 +30,17 @@ export const ClientView: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
-  const handleAddProject = (e: React.FormEvent) => {
+  const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newProjectName.trim() && clientId) {
-      addProject(clientId, newProjectName.trim());
-      setNewProjectName('');
-      setIsAdding(false);
+      try {
+        await addProject(clientId, newProjectName.trim());
+        setNewProjectName('');
+        setIsAdding(false);
+      } catch (error) {
+        alert('Failed to add project. Please try again.');
+        console.error('Add project failed:', error);
+      }
     }
   };
 
