@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { useBuilderStore } from '../stores/useBuilderStore';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
@@ -105,6 +105,19 @@ export const Preview: React.FC = () => {
 
   const project = projectId ? getProject(projectId) : undefined;
   const client = project ? getClient(project.clientId) : undefined;
+
+  // Update page title
+  useEffect(() => {
+    if (client && project) {
+      document.title = `Wireframes | ${client.name} | ${project.name}`;
+    } else {
+      document.title = 'Wireframe Components';
+    }
+    // Cleanup: reset title when component unmounts
+    return () => {
+      document.title = 'Wireframe Components';
+    };
+  }, [client, project]);
 
   // Show loading state while store is loading
   if (loading) {
