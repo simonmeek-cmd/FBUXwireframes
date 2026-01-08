@@ -249,39 +249,92 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       // Get current page count for order_index
       const currentPageCount = project.pages.length;
 
+      // Create default components based on page type
+      let defaultComponents: PlacedComponent[] = [];
+      if (type === 'news-listing' || type === 'resources-listing' || type === 'events-listing') {
+        // Add ListingPage component for listing pages
+        defaultComponents = [{
+          id: generateId(),
+          type: 'ListingPage',
+          props: {
+            listingType: type === 'news-listing' ? 'news' : type === 'resources-listing' ? 'resources' : 'events',
+            title: name,
+          },
+          order: 0,
+        }];
+      } else if (type === 'news-article' || type === 'resource-detail' || type === 'event-detail') {
+        // Add DetailPage component for detail pages
+        defaultComponents = [{
+          id: generateId(),
+          type: 'DetailPage',
+          props: {
+            detailType: type === 'news-article' ? 'news' : type === 'resource-detail' ? 'resources' : 'events',
+            title: name,
+          },
+          order: 0,
+        }];
+      }
+
       // Create the main page
       const newPage = await pagesApi.create({
         project_id: projectId,
         name,
         type,
-        components: [],
+        components: defaultComponents,
         order_index: currentPageCount,
       });
 
       // Handle paired pages (listing pages that need a detail page)
       let detailPage: Page | null = null;
       if (type === 'news-listing') {
+        const detailComponents: PlacedComponent[] = [{
+          id: generateId(),
+          type: 'DetailPage',
+          props: {
+            detailType: 'news',
+            title: `${name} Article`,
+          },
+          order: 0,
+        }];
         detailPage = await pagesApi.create({
           project_id: projectId,
           name: `${name} Article`,
           type: 'news-article',
-          components: [],
+          components: detailComponents,
           order_index: currentPageCount + 1,
         });
       } else if (type === 'resources-listing') {
+        const detailComponents: PlacedComponent[] = [{
+          id: generateId(),
+          type: 'DetailPage',
+          props: {
+            detailType: 'resources',
+            title: `${name} Resource`,
+          },
+          order: 0,
+        }];
         detailPage = await pagesApi.create({
           project_id: projectId,
           name: `${name} Resource`,
           type: 'resource-detail',
-          components: [],
+          components: detailComponents,
           order_index: currentPageCount + 1,
         });
       } else if (type === 'events-listing') {
+        const detailComponents: PlacedComponent[] = [{
+          id: generateId(),
+          type: 'DetailPage',
+          props: {
+            detailType: 'events',
+            title: `${name} Event`,
+          },
+          order: 0,
+        }];
         detailPage = await pagesApi.create({
           project_id: projectId,
           name: `${name} Event`,
           type: 'event-detail',
-          components: [],
+          components: detailComponents,
           order_index: currentPageCount + 1,
         });
       }
