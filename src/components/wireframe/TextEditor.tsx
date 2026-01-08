@@ -27,14 +27,76 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const displayContent = content || defaultContent;
 
   return (
-    <div className="prose-wire px-4 py-6 max-w-4xl mx-auto">
+    <div className="px-4 py-6 max-w-4xl mx-auto">
       {heading && (
         <h2 className="text-xl font-bold text-wire-800 mb-4">{heading}</h2>
       )}
       <div 
-        className="text-wire-700 leading-relaxed prose-p:mb-4 prose-ul:list-disc prose-ul:list-inside prose-ul:mb-4 prose-ul:space-y-1 prose-li:text-wire-700 prose-strong:font-bold prose-em:italic"
+        className="text-wire-700 leading-relaxed text-base"
         dangerouslySetInnerHTML={{ __html: displayContent }}
       />
+      <style>{`
+        .text-wire-700 p {
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+        }
+        .text-wire-700 p:first-child {
+          margin-top: 0;
+        }
+        .text-wire-700 p:last-child {
+          margin-bottom: 0;
+        }
+        .text-wire-700 h2 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #243b53;
+          margin-top: 2rem;
+          margin-bottom: 0.75rem;
+          line-height: 1.3;
+        }
+        .text-wire-700 h2:first-child {
+          margin-top: 0;
+        }
+        .text-wire-700 h3 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #243b53;
+          margin-top: 1.5rem;
+          margin-bottom: 0.5rem;
+          line-height: 1.4;
+        }
+        .text-wire-700 ul,
+        .text-wire-700 ol {
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+          padding-left: 1.5rem;
+          list-style-position: outside;
+        }
+        .text-wire-700 ul {
+          list-style-type: disc;
+        }
+        .text-wire-700 ol {
+          list-style-type: decimal;
+        }
+        .text-wire-700 li {
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+          display: list-item;
+          line-height: 1.6;
+        }
+        .text-wire-700 li:first-child {
+          margin-top: 0;
+        }
+        .text-wire-700 li:last-child {
+          margin-bottom: 0;
+        }
+        .text-wire-700 strong {
+          font-weight: 600;
+        }
+        .text-wire-700 em {
+          font-style: italic;
+        }
+      `}</style>
     </div>
   );
 };
