@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { useBuilderStore } from '../stores/useBuilderStore';
 import { NavigationSettings } from '../components/builder/NavigationSettings';
@@ -33,6 +33,8 @@ export const ProjectView: React.FC = () => {
   const [showWelcomePageSettings, setShowWelcomePageSettings] = useState(false);
   const [showComponentSettings, setShowComponentSettings] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showPublishMenu, setShowPublishMenu] = useState(false);
+  const publishMenuRef = useRef<HTMLDivElement>(null);
 
   const project = projectId ? getProject(projectId) : undefined;
   const client = project ? getClient(project.clientId) : undefined;
@@ -125,10 +127,26 @@ export const ProjectView: React.FC = () => {
     }
   };
 
+  // Helper to find homepage (by type or name)
+  const findHomepage = () => {
+    return project.pages.find(p => 
+      p.type === 'homepage' || 
+      ['home', 'homepage', 'home page'].includes(p.name.trim().toLowerCase())
+    );
+  };
+
   const getPublishUrl = () => {
     if (!projectId) return '';
     const baseUrl = window.location.origin;
     return `${baseUrl}/publish/${projectId}`;
+  };
+
+  const getHomepageUrlWithoutHeader = () => {
+    if (!projectId) return '';
+    const homepage = findHomepage();
+    if (!homepage) return '';
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/publish/${projectId}/${homepage.id}?noHeader=true`;
   };
 
   const handleCopyPublishUrl = async () => {
@@ -147,6 +165,43 @@ export const ProjectView: React.FC = () => {
       alert('Publish URL copied to clipboard!');
     }
   };
+
+  const handleCopyHomepageUrlWithoutHeader = async () => {
+    const homepage = findHomepage();
+    if (!homepage) {
+      alert('No homepage found. Please create a page with type "Homepage" or name it "Home", "Homepage", or "Home page".');
+      return;
+    }
+    const url = getHomepageUrlWithoutHeader();
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('Homepage link (without header) copied to clipboard!');
+      setShowPublishMenu(false);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Homepage link (without header) copied to clipboard!');
+      setShowPublishMenu(false);
+    }
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (publishMenuRef.current && !publishMenuRef.current.contains(event.target as Node)) {
+        setShowPublishMenu(false);
+      }
+    };
+    if (showPublishMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showPublishMenu]);
 
   const getPageTypeLabel = (type: PageType) => {
     return PAGE_TYPES.find((t) => t.value === type)?.label || type;
@@ -183,13 +238,45 @@ export const ProjectView: React.FC = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={handleCopyPublishUrl}
-                disabled={project.pages.length === 0}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                🔗 Copy Publish Link
-              </button>
+              {/* Split button for Copy Publish Link */}
+              <div className="relative flex items-center" ref={publishMenuRef}>
+                <button
+                  onClick={handleCopyPublishUrl}
+                  disabled={project.pages.length === 0}
+                  className="px-4 py-2 bg-green-600 text-white rounded-l hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  🔗 Copy Publish Link
+                </button>
+                <button
+                  onClick={() => setShowPublishMenu(!showPublishMenu)}
+                  disabled={project.pages.length === 0}
+                  className="px-2 py-2 bg-green-600 text-white rounded-r border-l border-green-700 hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="More options"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+                {showPublishMenu && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-green-200 rounded shadow-lg min-w-[280px] z-50">
+                    <button
+                      onClick={handleCopyHomepageUrlWithoutHeader}
+                      className="w-full text-left px-4 py-2 text-sm text-green-800 hover:bg-green-50 transition-colors"
+                    >
+                      Copy Homepage link without client header
+                    </button>
+                  </div>
+                )}
+              </div>
               <a
                 href={getPublishUrl()}
                 target="_blank"

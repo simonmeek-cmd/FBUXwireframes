@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { ComponentRenderer } from '../components/builder/ComponentRenderer';
 import { SiteNavigation } from '../components/wireframe/SiteNavigation';
 import { SiteFooter } from '../components/wireframe/SiteFooter';
@@ -598,6 +598,8 @@ const CommentForm: React.FC<{
 
 export const Publish: React.FC = () => {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
+  const [searchParams] = useSearchParams();
+  const hideHeader = searchParams.get('noHeader') === 'true';
   const [project, setProject] = useState<Project & { clientName?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -839,7 +841,8 @@ Please review the comments at: ${pageUrl}`
 
   return (
     <div className="min-h-screen bg-wire-50">
-      {/* Page navigation tabs + Home icon */}
+      {/* Page navigation tabs + Home icon - hidden when ?noHeader=true */}
+      {!hideHeader && (
       <div className="bg-wire-200 border-b border-wire-300 px-4 py-2 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto items-center relative">
           {/* Home icon tab */}
@@ -1017,6 +1020,7 @@ Please review the comments at: ${pageUrl}`
           )}
         </div>
       </div>
+      )}
 
       {/* Page content */}
       <div className="max-w-6xl mx-auto bg-white min-h-screen shadow-lg">
