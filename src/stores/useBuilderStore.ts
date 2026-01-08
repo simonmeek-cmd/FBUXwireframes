@@ -146,10 +146,11 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   // Project actions
   addProject: async (clientId, name) => {
     try {
+      // API expects client_id in snake_case
       const newProject = await projectsApi.create({
         client_id: clientId,
         name,
-      });
+      } as any);
       set((state) => ({
         projects: [...state.projects, newProject],
       }));
