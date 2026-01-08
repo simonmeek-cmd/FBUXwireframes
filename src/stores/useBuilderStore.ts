@@ -37,10 +37,10 @@ interface BuilderState {
   deletePage: (projectId: string, pageId: string) => Promise<void>;
   
   // Navigation config actions
-  updateNavigationConfig: (projectId: string, config: NavigationConfig) => void;
+  updateNavigationConfig: (projectId: string, config: NavigationConfig) => Promise<void>;
   
   // Footer config actions
-  updateFooterConfig: (projectId: string, config: FooterConfig) => void;
+  updateFooterConfig: (projectId: string, config: FooterConfig) => Promise<void>;
   
   // Welcome page config actions
   updateWelcomePageConfig: (projectId: string, config: WelcomePageConfig) => void;
@@ -401,25 +401,35 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   },
   
   // Navigation config actions
-  updateNavigationConfig: (projectId, config) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId ? { ...p, navigationConfig: config } : p
-      );
-      saveProjects(projects);
-      return { projects };
-    });
+  updateNavigationConfig: async (projectId, config) => {
+    try {
+      await projectsApi.update(projectId, { navigationConfig: config });
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === projectId ? { ...p, navigationConfig: config } : p
+        );
+        return { projects };
+      });
+    } catch (err: any) {
+      console.error('Failed to update navigation config:', err);
+      throw err;
+    }
   },
   
   // Footer config actions
-  updateFooterConfig: (projectId, config) => {
-    set((state) => {
-      const projects = state.projects.map((p) =>
-        p.id === projectId ? { ...p, footerConfig: config } : p
-      );
-      saveProjects(projects);
-      return { projects };
-    });
+  updateFooterConfig: async (projectId, config) => {
+    try {
+      await projectsApi.update(projectId, { footerConfig: config });
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === projectId ? { ...p, footerConfig: config } : p
+        );
+        return { projects };
+      });
+    } catch (err: any) {
+      console.error('Failed to update footer config:', err);
+      throw err;
+    }
   },
 
   // Welcome page config actions
