@@ -29,7 +29,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   return (
     <div className="px-4 py-6 max-w-4xl mx-auto">
       {heading && (
-        <h2 className="text-xl font-bold text-wire-800 mb-4">{heading}</h2>
+        <h2 className="text-wire-700" style={{
+          fontSize: '1.5rem',
+          fontWeight: 700,
+          color: '#243b53',
+          marginTop: 0,
+          marginBottom: '0.75rem',
+          lineHeight: 1.3,
+        }}>{heading}</h2>
       )}
       <div 
         className="text-wire-700 leading-relaxed text-base"
