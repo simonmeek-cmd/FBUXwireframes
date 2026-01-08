@@ -83,15 +83,25 @@ export const ProjectView: React.FC = () => {
     }
   };
 
-  const handleSaveNavigation = (config: NavigationConfig) => {
+  const handleSaveNavigation = async (config: NavigationConfig) => {
     if (projectId) {
-      updateNavigationConfig(projectId, config);
+      try {
+        await updateNavigationConfig(projectId, config);
+      } catch (error) {
+        alert('Failed to save navigation config. Please try again.');
+        console.error('Save navigation config failed:', error);
+      }
     }
   };
 
-  const handleSaveFooter = (config: FooterConfig) => {
+  const handleSaveFooter = async (config: FooterConfig) => {
     if (projectId) {
-      updateFooterConfig(projectId, config);
+      try {
+        await updateFooterConfig(projectId, config);
+      } catch (error) {
+        alert('Failed to save footer config. Please try again.');
+        console.error('Save footer config failed:', error);
+      }
     }
   };
 
