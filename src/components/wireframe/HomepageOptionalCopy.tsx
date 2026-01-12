@@ -61,7 +61,7 @@ export const HomepageOptionalCopy: React.FC<HomepageOptionalCopyProps> = ({
           <div className={`mt-6 flex ${buttonAlignmentClasses[alignment]}`}>
             <a
               href={buttonHref}
-              className="px-6 py-3 bg-wire-600 text-wire-100 rounded hover:bg-wire-700 transition-colors font-medium inline-block"
+              className="px-6 py-3 bg-wire-600 text-wire-100 rounded hover:bg-wire-700 transition-colors font-medium inline-block no-underline"
             >
               {buttonLabel}
             </a>
