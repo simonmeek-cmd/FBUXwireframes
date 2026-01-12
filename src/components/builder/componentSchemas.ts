@@ -54,6 +54,9 @@ export const componentSchemas: ComponentSchema[] = [
           { value: 'highlighted', label: 'Highlighted' },
         ],
       },
+      { key: 'showButton', label: 'Show Button', type: 'toggle' },
+      { key: 'buttonLabel', label: 'Button Label', type: 'text', placeholder: 'Button' },
+      { key: 'buttonHref', label: 'Button URL', type: 'text', placeholder: '#' },
     ],
   },
   {

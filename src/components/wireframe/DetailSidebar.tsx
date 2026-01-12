@@ -191,3 +191,4 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
 export default DetailSidebar;
 
 
+

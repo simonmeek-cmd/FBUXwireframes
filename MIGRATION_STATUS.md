@@ -114,3 +114,4 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 - RLS policies are configured for security
 
 
+
