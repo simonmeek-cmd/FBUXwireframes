@@ -1011,26 +1011,28 @@ Please review the comments at: ${pageUrl}`
             </button>
           )}
 
-          {/* Page tabs */}
+          {/* Page selector dropdown */}
           {sortedPages.length > 1 && (
             <>
               <span className="h-6 w-px bg-wire-300 mx-1" aria-hidden="true" />
-              {sortedPages.map((page, index) => {
-                const isActive = pageId ? page.id === pageId : index === currentPageIndex;
-                return (
-                  <button
-                    key={page.id}
-                    onClick={() => goToPage(index)}
-                    className={`px-3 py-1.5 text-sm rounded whitespace-nowrap transition-colors ${
-                      isActive
-                        ? 'bg-wire-600 text-white'
-                        : 'bg-wire-100 text-wire-700 hover:bg-wire-300'
-                    }`}
-                  >
+              <select
+                value={currentPage?.id || ''}
+                onChange={(e) => {
+                  const selectedPage = sortedPages.find(p => p.id === e.target.value);
+                  if (selectedPage) {
+                    const targetIndex = sortedPages.findIndex(p => p.id === selectedPage.id);
+                    goToPage(targetIndex);
+                  }
+                }}
+                className="px-3 py-1.5 text-sm rounded border border-wire-300 bg-wire-50 text-wire-700 hover:bg-wire-100 focus:outline-none focus:border-wire-500 focus:bg-white transition-colors cursor-pointer"
+                title="Select page"
+              >
+                {sortedPages.map((page, index) => (
+                  <option key={page.id} value={page.id}>
                     {page.name}
-                  </button>
-                );
-              })}
+                  </option>
+                ))}
+              </select>
             </>
           )}
         </div>
