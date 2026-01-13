@@ -305,6 +305,9 @@ export const componentSchemas: ComponentSchema[] = [
           { value: 'minimal', label: 'Minimal' },
         ],
       },
+      { key: 'showImage', label: 'Show Image', type: 'toggle' },
+      { key: 'imageUrl', label: 'Image URL', type: 'text', placeholder: 'https://example.com/image.jpg' },
+      { key: 'imageAlt', label: 'Image Alt Text', type: 'text', placeholder: 'Image description' },
     ],
   },
   {
