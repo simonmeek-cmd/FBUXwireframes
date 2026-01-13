@@ -360,6 +360,51 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
     return items.length > 0 ? items : undefined;
   };
 
+  // Helper to convert accordion items array to flat fields
+  const accordionItemsToFlatFields = (items: unknown[] | undefined): Record<string, unknown> => {
+    const flat: Record<string, unknown> = {};
+    const defaultItems = [
+      { id: '1', title: 'Enim cillum dolore eu fugiat nulla pariatur', body: '<p>Lorem ipsum dolor sit amet...</p>', defaultOpen: true },
+      { id: '2', title: 'Enim cillum dolore eu fugiat nulla pariatur', body: '<p>Duis aute irure dolor...</p>' },
+      { id: '3', title: 'Enim cillum dolore eu fugiat nulla pariatur', body: '<p>Sed ut perspiciatis...</p>' },
+    ];
+    
+    const itemsToUse = Array.isArray(items) && items.length > 0 ? items : defaultItems;
+    
+    itemsToUse.forEach((item: any, index: number) => {
+      flat[`accordionItem${index}Title`] = item?.title || '';
+      flat[`accordionItem${index}Body`] = item?.body || '';
+      flat[`accordionItem${index}Id`] = item?.id || String(index + 1);
+      flat[`accordionItem${index}DefaultOpen`] = item?.defaultOpen || false;
+    });
+    
+    flat.accordionItemCount = itemsToUse.length;
+    
+    return flat;
+  };
+
+  // Helper to convert flat fields back to accordion items array
+  const accordionFlatFieldsToItems = (props: Record<string, unknown>): unknown[] | undefined => {
+    const items: any[] = [];
+    const count = (props.accordionItemCount as number) || 0;
+    
+    for (let i = 0; i < count; i++) {
+      const title = props[`accordionItem${i}Title`] as string;
+      const body = props[`accordionItem${i}Body`] as string;
+      if (title && title.trim()) {
+        items.push({
+          id: (props[`accordionItem${i}Id`] as string) || String(i + 1),
+          title: title.trim(),
+          body: (body && body.trim()) || '<p></p>',
+          defaultOpen: props[`accordionItem${i}DefaultOpen`] || false,
+        });
+      }
+    }
+    
+    // Return undefined if no items (component will use defaultItems)
+    return items.length > 0 ? items : undefined;
+  };
+
   // Sync local props when component changes (by ID, not props to avoid loops)
   useEffect(() => {
     if (component && component.id !== componentIdRef.current) {
@@ -378,6 +423,29 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
         const flatFields = titlesOnlyItemsToFlatFields(props.items as unknown[]);
         delete props.items; // Remove items from props
         Object.assign(props, flatFields); // Add flat fields
+      }
+      
+      // Convert items array to flat fields for AccordionInline
+      if (component.type === 'AccordionInline') {
+        const flatFields = accordionItemsToFlatFields(props.items as unknown[]);
+        delete props.items; // Remove items from props
+        Object.assign(props, flatFields); // Add flat fields
+        // Ensure we have at least one item
+        if (!props.accordionItemCount || (props.accordionItemCount as number) === 0) {
+          props.accordionItemCount = 3;
+          props.accordionItem0Id = '1';
+          props.accordionItem0Title = 'Enim cillum dolore eu fugiat nulla pariatur';
+          props.accordionItem0Body = '<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>';
+          props.accordionItem0DefaultOpen = true;
+          props.accordionItem1Id = '2';
+          props.accordionItem1Title = 'Enim cillum dolore eu fugiat nulla pariatur';
+          props.accordionItem1Body = '<p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>';
+          props.accordionItem1DefaultOpen = false;
+          props.accordionItem2Id = '3';
+          props.accordionItem2Title = 'Enim cillum dolore eu fugiat nulla pariatur';
+          props.accordionItem2Body = '<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>';
+          props.accordionItem2DefaultOpen = false;
+        }
       }
       
       setLocalProps(props);
@@ -430,6 +498,25 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
         ['item0Title', 'item0Subtitle', 'item0Meta',
          'item1Title', 'item1Subtitle', 'item1Meta',
          'item2Title', 'item2Subtitle', 'item2Meta'].forEach(field => {
+          delete propsToSave[field];
+        });
+        onUpdateProps(propsToSave);
+      } else if (component?.type === 'AccordionInline') {
+        // For AccordionInline, convert flat fields back to items array
+        const currentProps = localPropsRef.current;
+        const items = accordionFlatFieldsToItems(currentProps);
+        const propsToSave: Record<string, unknown> = { ...currentProps };
+        if (items) {
+          propsToSave.items = items;
+        }
+        // Remove flat fields from props to save
+        const fieldsToRemove: string[] = [];
+        const count = (currentProps.accordionItemCount as number) || 0;
+        for (let i = 0; i < count; i++) {
+          fieldsToRemove.push(`accordionItem${i}Title`, `accordionItem${i}Body`, `accordionItem${i}Id`, `accordionItem${i}DefaultOpen`);
+        }
+        fieldsToRemove.push('accordionItemCount');
+        fieldsToRemove.forEach(field => {
           delete propsToSave[field];
         });
         onUpdateProps(propsToSave);
@@ -520,7 +607,95 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
           </div>
         ))}
 
-        {(!schema || schema.fields.length === 0) && (
+        {/* Accordion Items Editor */}
+        {component?.type === 'AccordionInline' && (
+          <div className="border-t border-wire-300 pt-4 mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-wire-700">
+                Accordion Items
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const currentCount = (localProps.accordionItemCount as number) || 0;
+                  const newCount = currentCount + 1;
+                  const newId = `accordion-${Date.now()}`;
+                  handleFieldChange('accordionItemCount', newCount);
+                  handleFieldChange(`accordionItem${currentCount}Id`, newId);
+                  handleFieldChange(`accordionItem${currentCount}Title`, 'New Item');
+                  handleFieldChange(`accordionItem${currentCount}Body`, '<p></p>');
+                  handleFieldChange(`accordionItem${currentCount}DefaultOpen`, false);
+                }}
+                className="px-3 py-1.5 text-xs bg-wire-600 text-white rounded hover:bg-wire-700 transition-colors"
+              >
+                + Add Item
+              </button>
+            </div>
+            {Array.from({ length: (localProps.accordionItemCount as number) || 0 }).map((_, index) => (
+              <div key={index} className="mb-4 p-3 border border-wire-300 rounded bg-wire-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-wire-600">Item {index + 1}</span>
+                  {(localProps.accordionItemCount as number) > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentCount = (localProps.accordionItemCount as number) || 0;
+                        // Remove this item by shifting all items after it
+                        for (let i = index; i < currentCount - 1; i++) {
+                          handleFieldChange(`accordionItem${i}Title`, localProps[`accordionItem${i + 1}Title`] || '');
+                          handleFieldChange(`accordionItem${i}Body`, localProps[`accordionItem${i + 1}Body`] || '');
+                          handleFieldChange(`accordionItem${i}Id`, localProps[`accordionItem${i + 1}Id`] || String(i + 1));
+                          handleFieldChange(`accordionItem${i}DefaultOpen`, localProps[`accordionItem${i + 1}DefaultOpen`] || false);
+                        }
+                        // Clear the last item
+                        const lastIndex = currentCount - 1;
+                        handleFieldChange(`accordionItem${lastIndex}Title`, '');
+                        handleFieldChange(`accordionItem${lastIndex}Body`, '');
+                        handleFieldChange(`accordionItem${lastIndex}Id`, '');
+                        handleFieldChange(`accordionItem${lastIndex}DefaultOpen`, false);
+                        handleFieldChange('accordionItemCount', currentCount - 1);
+                      }}
+                      className="text-xs text-wire-500 hover:text-wire-700 underline"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs font-medium text-wire-600 mb-1">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={(localProps[`accordionItem${index}Title`] as string) || ''}
+                      onChange={(e) => handleFieldChange(`accordionItem${index}Title`, e.target.value)}
+                      placeholder="Item title"
+                      className="w-full px-2 py-1.5 text-sm bg-white border border-wire-300 rounded focus:outline-none focus:border-wire-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-wire-600 mb-1">
+                      Content
+                    </label>
+                    <RichTextEditor
+                      value={(localProps[`accordionItem${index}Body`] as string) || '<p></p>'}
+                      onChange={(value) => handleFieldChange(`accordionItem${index}Body`, value)}
+                      placeholder="Item content..."
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            {(!localProps.accordionItemCount || (localProps.accordionItemCount as number) === 0) && (
+              <p className="text-xs text-wire-500 italic text-center py-4">
+                No items yet. Click "Add Item" to create one.
+              </p>
+            )}
+          </div>
+        )}
+
+        {(!schema || schema.fields.length === 0) && component?.type !== 'AccordionInline' && (
           <p className="text-sm text-wire-500 italic">
             No editable properties for this component
           </p>

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 export interface AccordionItem {
   id: string;
   title: string;
-  body: React.ReactNode;
+  body: string; // Changed to string to support HTML content
   defaultOpen?: boolean;
 }
 
@@ -20,18 +20,18 @@ const defaultItems: AccordionItem[] = [
   {
     id: '1',
     title: 'Enim cillum dolore eu fugiat nulla pariatur',
-    body: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.',
+    body: '<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>',
     defaultOpen: true,
   },
   {
     id: '2',
     title: 'Enim cillum dolore eu fugiat nulla pariatur',
-    body: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.',
+    body: '<p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>',
   },
   {
     id: '3',
     title: 'Enim cillum dolore eu fugiat nulla pariatur',
-    body: 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.',
+    body: '<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>',
   },
 ];
 
@@ -70,7 +70,7 @@ export const AccordionInline: React.FC<AccordionInlineProps> = ({
   };
 
   return (
-    <div>
+    <div className="px-4 py-6 max-w-4xl mx-auto">
       {heading && (
         <h2 className="text-xl font-bold text-wire-800 mb-4">{heading}</h2>
       )}
@@ -107,7 +107,10 @@ export const AccordionInline: React.FC<AccordionInlineProps> = ({
                 hidden={!isOpen}
                 className={`px-4 pb-4 text-wire-600 ${isOpen ? '' : 'hidden'}`}
               >
-                {item.body}
+                <div 
+                  className="leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: item.body }}
+                />
               </div>
             </div>
           );
