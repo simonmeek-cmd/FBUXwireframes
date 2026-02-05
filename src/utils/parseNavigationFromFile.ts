@@ -172,10 +172,21 @@ const parseNavigationFromImage = async (file: File): Promise<{ config: Navigatio
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[Image Parser] Netlify function error:', response.status, errorText);
+      
+      // Try to extract error message from response
+      let errorMessage = 'Failed to parse navigation image.';
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson?.error) {
+          errorMessage = errorJson.error;
+        }
+      } catch {
+        // Use generic message if can't parse
+      }
+      
       return {
         config: getDefaultConfig(),
-        error:
-          'Failed to parse navigation image. Please check that OPENAI_API_KEY is configured on Netlify and that the diagram follows the colour-coded template.',
+        error: errorMessage,
       };
     }
 

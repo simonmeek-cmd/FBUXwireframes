@@ -144,11 +144,26 @@ export const handler: Handler = async (event) => {
     if (!completionRes.ok) {
       const errorText = await completionRes.text();
       console.error('[parse-nav-image] OpenAI error:', completionRes.status, errorText);
+      
+      // Try to parse the error for a more helpful message
+      let errorDetail = `OpenAI API error (${completionRes.status})`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson?.error?.message) {
+          errorDetail = errorJson.error.message;
+        }
+      } catch {
+        // Use raw text if not JSON
+        if (errorText && errorText.length < 200) {
+          errorDetail = errorText;
+        }
+      }
+      
       return {
         statusCode: 502,
         headers,
         body: JSON.stringify({
-          error: 'Failed to parse image via OpenAI. Check server logs and API key configuration.',
+          error: `Failed to parse image: ${errorDetail}`,
         }),
       };
     }
