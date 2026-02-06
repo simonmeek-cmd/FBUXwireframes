@@ -14,11 +14,10 @@ export interface SiteNavigationStaticProps {
 export const SiteNavigationStatic: React.FC<SiteNavigationStaticProps> = ({
   config = defaultNavigationConfig,
 }) => {
-  // Check if ANY item has grandchildren (determines mega menu vs simple dropdown)
+  // Check if a specific item has grandchildren (determines mega menu vs simple dropdown per item)
   const hasGrandchildren = (item: NavItem) => {
     return item.children?.some(child => child.children && child.children.length > 0);
   };
-  const anyItemHasGrandchildren = config.primaryItems.some(item => hasGrandchildren(item));
 
   return (
     <header className="bg-wire-700 text-white relative">
@@ -65,9 +64,10 @@ export const SiteNavigationStatic: React.FC<SiteNavigationStaticProps> = ({
             <nav className="flex items-center gap-1 mr-4">
               {config.primaryItems.map((item, idx) => {
                 const hasChildren = item.children && item.children.length > 0;
+                const itemHasGrandchildren = hasGrandchildren(item);
                 
                 return (
-                  <div key={idx} className="relative group">
+                  <div key={idx} className="relative group" data-nav-item={idx} data-has-grandchildren={itemHasGrandchildren}>
                     <a
                       href={item.href || '#'}
                       className="px-3 py-2 text-sm transition-colors no-underline text-wire-200 hover:text-white hover:bg-wire-600 rounded"
@@ -80,8 +80,8 @@ export const SiteNavigationStatic: React.FC<SiteNavigationStaticProps> = ({
                       )}
                     </a>
                     
-                    {/* Always render dropdown if has children */}
-                    {hasChildren && !anyItemHasGrandchildren && (
+                    {/* Simple dropdown for items WITHOUT grandchildren (2-tier) */}
+                    {hasChildren && !itemHasGrandchildren && (
                       <div className="absolute top-full left-0 pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 dropdown-menu">
                         <div className="bg-white border border-wire-200 shadow-lg py-1 min-w-[160px] rounded">
                           {item.children!.map((child, childIdx) => (
@@ -131,11 +131,13 @@ export const SiteNavigationStatic: React.FC<SiteNavigationStaticProps> = ({
         </div>
       </div>
 
-      {/* Mega Menu - Rendered for each item with grandchildren */}
-      {anyItemHasGrandchildren && config.primaryItems.map((item, idx) => {
+      {/* Mega Menu - Rendered ONLY for items WITH grandchildren (3-tier) */}
+      {config.primaryItems.map((item, idx) => {
         if (!item.children || item.children.length === 0) return null;
         
-        const hasAnyGrandchildren = item.children.some(child => child.children && child.children.length > 0);
+        // Only render mega menu for items that actually have grandchildren
+        const itemHasGrandchildren = hasGrandchildren(item);
+        if (!itemHasGrandchildren) return null;
         
         return (
           <div 
@@ -153,48 +155,32 @@ export const SiteNavigationStatic: React.FC<SiteNavigationStaticProps> = ({
                     </div>
                   )}
 
-                  {/* Menu content */}
-                  {hasAnyGrandchildren ? (
-                    <div className="flex-1 flex gap-8">
-                      {item.children.map((child, childIdx) => (
-                        <div key={childIdx} className="min-w-[160px]">
-                          <a
-                            href={child.href || '#'}
-                            className="block text-sm font-medium text-wire-800 mb-2 no-underline hover:bg-wire-100 px-2 py-1 -mx-2 rounded transition-colors"
-                          >
-                            {child.label}
-                          </a>
-                          {child.children && child.children.length > 0 && (
-                            <div className="space-y-0.5">
-                              {child.children.map((grandchild, gIdx) => (
-                                <a
-                                  key={gIdx}
-                                  href={grandchild.href || '#'}
-                                  className="block text-sm text-wire-600 no-underline px-2 py-1.5 -mx-2 rounded hover:bg-wire-100 hover:text-wire-800 transition-colors"
-                                >
-                                  {grandchild.label}
-                                </a>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex-1">
-                      <div className="space-y-0.5">
-                        {item.children.map((child, childIdx) => (
-                          <a
-                            key={childIdx}
-                            href={child.href || '#'}
-                            className="block text-sm text-wire-700 no-underline px-2 py-2 -mx-2 rounded hover:bg-wire-100 hover:text-wire-800 transition-colors"
-                          >
-                            {child.label}
-                          </a>
-                        ))}
+                  {/* Menu content - columns with grandchildren */}
+                  <div className="flex-1 flex gap-8">
+                    {item.children.map((child, childIdx) => (
+                      <div key={childIdx} className="min-w-[160px]">
+                        <a
+                          href={child.href || '#'}
+                          className="block text-sm font-medium text-wire-800 mb-2 no-underline hover:bg-wire-100 px-2 py-1 -mx-2 rounded transition-colors"
+                        >
+                          {child.label}
+                        </a>
+                        {child.children && child.children.length > 0 && (
+                          <div className="space-y-0.5">
+                            {child.children.map((grandchild, gIdx) => (
+                              <a
+                                key={gIdx}
+                                href={grandchild.href || '#'}
+                                className="block text-sm text-wire-600 no-underline px-2 py-1.5 -mx-2 rounded hover:bg-wire-100 hover:text-wire-800 transition-colors"
+                              >
+                                {grandchild.label}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

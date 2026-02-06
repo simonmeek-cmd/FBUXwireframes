@@ -304,17 +304,15 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
     return item.children?.some(child => child.children && child.children.length > 0);
   };
 
-  // Check if ANY item in the nav has grandchildren (determines if we use mega menu for all)
-  const anyItemHasGrandchildren = config.primaryItems.some(item => hasGrandchildren(item));
-
   // Get the active menu item
   const activeMenuItem = activeDropdown !== null 
     ? config.primaryItems[activeDropdown] 
     : null;
 
-  // Show mega menu ONLY if any item has grandchildren (3-tier mode)
-  // For 2-tier nav, use SimpleDropdown instead
-  const showMegaMenu = anyItemHasGrandchildren && activeMenuItem && activeMenuItem.children && activeMenuItem.children.length > 0;
+  // Show mega menu ONLY if the ACTIVE item has grandchildren (3-tier)
+  // Items without grandchildren use SimpleDropdown regardless of other items
+  const activeItemHasGrandchildren = activeMenuItem ? hasGrandchildren(activeMenuItem) : false;
+  const showMegaMenu = activeItemHasGrandchildren && activeMenuItem && activeMenuItem.children && activeMenuItem.children.length > 0;
 
   return (
     <>
@@ -380,6 +378,7 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
                 {config.primaryItems.map((item, idx) => {
                   const isActive = activeDropdown === idx;
                   const hasChildren = item.children && item.children.length > 0;
+                  const itemHasGrandchildren = hasGrandchildren(item);
                   
                   return (
                     <div 
@@ -387,8 +386,8 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
                       className="relative group"
                       onMouseEnter={() => setActiveDropdown(idx)}
                       onMouseLeave={() => {
-                        // Only clear if not using mega menu (mega menu handles its own leave)
-                        if (!anyItemHasGrandchildren) {
+                        // Only clear if this item doesn't use mega menu (mega menu handles its own leave)
+                        if (!itemHasGrandchildren) {
                           setActiveDropdown(null);
                         }
                       }}
@@ -409,8 +408,8 @@ export const SiteNavigation: React.FC<SiteNavigationProps> = ({
                       >
                         {item.label}
                       </a>
-                      {/* Simple dropdown only when NOT in 3-tier mode */}
-                      {!anyItemHasGrandchildren && hasChildren && (
+                      {/* Simple dropdown for items WITHOUT grandchildren (2-tier) */}
+                      {!itemHasGrandchildren && hasChildren && (
                         <SimpleDropdown item={item} onNavigate={onNavigate} />
                       )}
                     </div>
